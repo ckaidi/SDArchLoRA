@@ -1,5 +1,7 @@
 <template>
-  <MoreImagesPage style="width: 100%"/>
+  <div style="width: 100%">
+    <MoreImagesPage class="m-0" style="width: 100%"/>
+  </div>
 </template>
 <script>
 import MoreImagesPage from "@/views/MoreImagesPage.vue";
@@ -16,32 +18,7 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-}
-
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+  margin: 0;
+  padding: 0;
 }
 </style>

@@ -1,34 +1,12 @@
 <template>
-  <div class="col-8 row">
-    <div class="col">
+  <div class="container-fluid m-2 row">
+    <div class="col-10">
       <input type="text" class="form-control" placeholder="关键字">
     </div>
-    <div class="col">
-      <select v-for="(items,index) in allOptions" :key="items.key"
-              class="rounded form-select bg-light border-light-subtle" :id="items.key"
-              aria-label="Default select example">
-        <option selected>{{ items.key }}</option>
-        <option v-for="item in items.value" :key="item">{{ item }}</option>
-      </select>
+    <div class="col-2">
+      <button type="button" class="btn btn-primary w-100">搜索</button>
     </div>
   </div>
-  <!--  <div class="container-fluid row w-100 row-cols-6">-->
-  <!--    <div class="input-group input-group-lg mb-3 col-1">-->
-  <!--      <span class="input-group-text" id="inputGroup-sizing-lg">关键字</span>-->
-  <!--      <input type="text" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-lg">-->
-
-  <!--      <div class="input-group input-group-lg mb-3 col-1">-->
-  <!--        <span class="input-group-text" id="inputGroup-sizing-lg">分类</span>-->
-  <!--        <input type="text" class="form-control" aria-label="Sizing example input"-->
-  <!--               aria-describedby="inputGroup-sizing-lg">-->
-  <!--      </div>-->
-  <!--      <div class="input-group input-group-lg mb-3 col-1">-->
-  <!--        <span class="input-group-text" id="inputGroup-sizing-lg">国家</span>-->
-  <!--        <input type="text" class="form-control" aria-label="Sizing example input"-->
-  <!--               aria-describedby="inputGroup-sizing-lg">-->
-  <!--      </div>-->
-  <!--    </div>-->
-  <!--  </div>-->
 </template>
 <script>
 export default {

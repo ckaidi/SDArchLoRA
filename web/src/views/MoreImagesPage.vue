@@ -1,17 +1,15 @@
 <template>
   <SettingComponent/>
-  <!--  <div class="login overflow-auto" style="scroll-behavior: auto;overscroll-behavior: initial">-->
-  <!--    <div class="rounded mb-3" v-waterfall="el=>updateLayout(el)" v-for="(item, index) in files" :key="index">-->
-  <!--      <div class="col rounded">-->
-  <!--        <div class="rounded shadow-sm">-->
-  <!--          <img :src=item.src alt="" class="card-img rounded">-->
-  <!--          <button type="button" class="m-3 btn btn-sm btn-outline-secondary" @click="download(item.src)">下载</button>-->
-  <!--          <button type="button" class="m-3 btn btn-sm btn-outline-danger" @click="deletePic(item.src)">删除-->
-  <!--          </button>-->
-  <!--        </div>-->
-  <!--      </div>-->
-  <!--    </div>-->
-  <!--  </div>-->
+  <div class="login">
+    <div class="rounded mb-3" v-waterfall="el=>updateLayout(el)" v-for="(item, index) in files" :key="index">
+      <div class="col rounded">
+        <div class="rounded shadow-sm">
+          <img :src=item.src alt="" class="card-img rounded">
+          <button type="button" class="m-3 btn btn-sm btn-outline-secondary" @click="download(item.src)">下载</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 <script>
 import 'vue-waterfall-plugin-next/dist/style.css'
@@ -65,7 +63,27 @@ export default {
   data() {
     return {
       tabName: "SDRS",
-      files: [],
+      files: [{
+        src: "零食柜.jpeg",
+      }, {
+        src: "mac.jpg"
+      }, {
+        src: "1寸.jpg"
+      }, {
+        src: "1寸.jpg"
+      }, {
+        src: "1寸.jpg"
+      }, {
+        src: "1寸.jpg"
+      }, {
+        src: "1寸.jpg"
+      }, {
+        src: "1寸.jpg"
+      }, {
+        src: "1寸.jpg"
+      }, {
+        src: "1寸.jpg"
+      },],
       columnHeights: [0, 0, 0]
     }
   },
@@ -123,8 +141,12 @@ export default {
 <style scoped>
 .login {
   margin: 10px;
-  column-count: 3;
+  column-count: 4;
   column-gap: 10px;
+}
+
+.item {
+  margin-bottom: 10px;
 }
 
 .item img {
