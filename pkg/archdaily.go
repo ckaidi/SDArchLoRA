@@ -113,7 +113,7 @@ func getImagesUrl(conn *websocket.Conn, key string, page int) {
 		handle(err)
 		count := 0 // 将 HTTP 连接升级为 WebSocket 连接
 		for _, project := range searchResult.Results {
-			if count > 100 {
+			if count > 50 {
 				return
 			}
 			analyseProject(conn, project, &count)
