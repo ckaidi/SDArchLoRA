@@ -1,139 +1,113 @@
 <template>
   <SettingComponent @transfer="addImages"/>
-  <div class="login">
-    <div class="rounded mb-3" v-waterfall="el=>updateLayout(el)" v-for="(item, index) in files" :key="index">
-      <div class="col rounded">
-        <div class="rounded shadow-sm">
-          <img :src=item.src alt="" class="card-img rounded">
-          <button type="button" class="m-3 btn btn-sm btn-outline-secondary" @click="download(item.src)">下载</button>
+  <div style="min-height: 100%; width:100%">
+    <Waterfall
+        :list="list"
+        :row-key="options.rowKey"
+        :gutter="options.gutter"
+        :has-around-gutter="options.hasAroundGutter"
+        :width="options.width"
+        :breakpoints="options.breakpoints"
+        :img-selector="options.imgSelector"
+        :animation-effect="options.animationEffect"
+        :animation-duration="options.animationDuration"
+        :animation-delay="options.animationDelay"
+        :lazyload="options.lazyload"
+        :cross-origin=true
+        :align="options.align"
+    >
+      <template #item="{ item, url, index }">
+        <div
+            class="bg-gray-900 rounded-lg shadow-md overflow-hidden transition-all
+            duration-300 ease-linear hover:shadow-lg hover:shadow-gray-600 group">
+          <div class="card">
+            <img :src=url :alt="item.name" class="card-img-top">
+            <div class="card-body">
+              <!--              <h5 class="card-title">Card title</h5>-->
+              <!--              <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's-->
+              <!--                content.</p>-->
+              <a href="#" class="btn btn-secondary">AI生图</a>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </template>
+    </Waterfall>
+
+    <!--    <div class="flex justify-center py-10 bg-gray-900">-->
+    <!--      <button-->
+    <!--          class="px-5 py-2 rounded-full bg-gray-700 text-md text-white cursor-pointer hover:bg-gray-800 transition-all duration-300">-->
+    <!--        加载更多-->
+    <!--      </button>-->
+    <!--    </div>-->
   </div>
 </template>
 <script>
 import 'vue-waterfall-plugin-next/dist/style.css'
 import SettingComponent from "@/components/SettingComponent.vue";
+import {LazyImg, Waterfall} from "vue-waterfall-plugin-next";
 
 export default {
-  components: {SettingComponent},
+  components: {LazyImg, Waterfall, SettingComponent},
   created() {
-    // console.log('created')
-    // // POST 请求的 URL
-    // let url = process.env.VUE_APP_SERVER + "/getDisplayResult";
-    // // 创建一个新的 XMLHttpRequest 对象
-    // let xhr = new XMLHttpRequest();
-    // // 设置请求方法和 URL
-    // xhr.open("POST", url, true);
-    // // 设置请求头
-    // xhr.setRequestHeader("Content-Type", "application/json");
-    // const instanceFiles = this.files;
-    // // 监听请求完成事件
-    // xhr.onload = function () {
-    //   if (xhr.status === 200) {
-    //     // 请求成功，处理响应
-    //     let response = JSON.parse(xhr.responseText);
-    //     console.log("加载图片响应数据:", response);
-    //     let images = response["images"]
-    //     if (images == null) {
-    //       return
-    //     }
-    //     for (let i = images.length - 1; i >= 0; i--) {
-    //       let picData = {
-    //         src: 'temp/' + images[i]['src'],
-    //         width: images[i]['width'],
-    //         height: images[i]['height']
-    //       }
-    //       instanceFiles.push(picData);
-    //     }
-    //   } else {
-    //     // 请求失败
-    //     console.log("请求失败:", xhr.status);
-    //   }
-    // };
-    // // 发送 POST 请求
-    // xhr.send(JSON.stringify({
-    //   "user_info":
-    //       {
-    //         "username": Cookie.get('username')
-    //       },
-    //   "length": -1
-    // }));
   },
   data() {
     return {
       tabName: "SDRS",
-      files: [],
-      columnHeights: [0, 0, 0]
-    }
-  },
-  directives: {
-    waterfall: {
-      inserted(el, binding) {
-        const callback = binding.value || {}
-      },
+      list: [],
+      columnHeights: [0, 0, 0],
+      options: {
+        // 唯一key值
+        rowKey: 'id',
+        // 卡片之间的间隙
+        gutter: 10,
+        // 是否有周围的gutter
+        hasAroundGutter: false,
+        // 卡片在PC上的宽度
+        width: 320,
+        // 自定义行显示个数，主要用于对移动端的适配
+        breakpoints: {
+          1200: {
+            // 当屏幕宽度小于等于1200
+            rowPerView: 4,
+          },
+          800: {
+            // 当屏幕宽度小于等于800
+            rowPerView: 3,
+          },
+          500: {
+            // 当屏幕宽度小于等于500
+            rowPerView: 2,
+          },
+        },
+        // 动画效果
+        animationEffect: 'animate__fadeInUp',
+        // 动画时间
+        animationDuration: 1000,
+        // 动画延迟
+        animationDelay: 300,
+        // imgSelector
+        imgSelector: 'src.original',
+        // 加载配置
+        // 是否懒加载
+        lazyload: true,
+        align: 'center',
+        crossOrigin: true,
+      }
     }
   },
   methods: {
     addImages(imageText) {
       const image = JSON.parse(imageText)
-      this.files.push({
-        src: image.url
-      })
-    },
-    updateLayout(item) {
-      const column = this.getMinColumnHeights(this.columnHeights)
-      const itemTop = this.columnHeights[column]
-      const itemLeft = column * item.clientWidth
-      item.style.transform = `translate(${itemLeft}px,${itemTop}px)`
-      this.columnHeights[column] += item.offsetHeight
-    },
-    getMinColumnHeights(arr) {
-      let min = Math.min(...arr)
-      return arr.indexOf(min) !== -1 ? arr.indexOf(min) : 0
-    },
-    download(filename) {
-      // TODO 发到AI生成平台
-    },
-    deletePic(filename) {
-      filename = filename.replace('temp/', '')
-      let jsonData = {
-        "filename": filename
-      }
-      let url = process.env.VUE_APP_SERVER + "/deletePic";
-      let xhr = new XMLHttpRequest();
-      xhr.open("POST", url, true);
-      // 设置请求头
-      xhr.setRequestHeader("Content-Type", "application/json");
-      // 监听请求完成事件
-      xhr.onload = function () {
-        if (xhr.status === 200) {
-          let response = JSON.parse(xhr.responseText);
-          if (response['status'] != null && response['status']) {
-            location.reload()
-          }
-          console.log("删除图片返回数据:", response);
-        } else {
-          // 请求失败
-          console.log("请求失败:", xhr.status);
+      this.list.push({
+        src: {
+          original: image.url
         }
-      };
-      // 发送 POST 请求
-      xhr.send(JSON.stringify(jsonData));
+      })
     }
   }
 }
 </script>
 <style scoped>
-.login {
-  margin: 10px;
-  column-count: 4;
-  column-gap: 10px;
-}
-
-.item {
-  margin-bottom: 10px;
-}
 
 .item img {
   width: 100%;
