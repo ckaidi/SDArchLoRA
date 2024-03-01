@@ -63,6 +63,7 @@ func fetch(webUrl string, method string, callback func(*http.Response)) {
 			continue
 		}
 		callback(response)
+		return
 	}
 }
 
