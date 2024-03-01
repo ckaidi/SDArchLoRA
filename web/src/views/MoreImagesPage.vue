@@ -77,10 +77,9 @@ export default {
   methods: {
     addImages(imageText) {
       const image = JSON.parse(imageText)
-      let a = {
+      this.files.push({
         src: image.url
-      }
-      this.files.push(a)
+      })
     },
     updateLayout(item) {
       const column = this.getMinColumnHeights(this.columnHeights)
