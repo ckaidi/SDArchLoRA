@@ -47,6 +47,8 @@ func GetProxy() Proxy {
 	var proxy Proxy
 	err = json.Unmarshal([]byte(text), &proxy)
 	handle(err)
+	proxy.Https = false
+	proxy.Addr = "117.160.250.134:8899"
 	return proxy
 }
 

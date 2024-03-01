@@ -1,5 +1,5 @@
 <template>
-  <SettingComponent/>
+  <SettingComponent @transfer="addImages"/>
   <div class="login">
     <div class="rounded mb-3" v-waterfall="el=>updateLayout(el)" v-for="(item, index) in files" :key="index">
       <div class="col rounded">
@@ -63,27 +63,7 @@ export default {
   data() {
     return {
       tabName: "SDRS",
-      files: [{
-        src: "零食柜.jpeg",
-      }, {
-        src: "mac.jpg"
-      }, {
-        src: "1寸.jpg"
-      }, {
-        src: "1寸.jpg"
-      }, {
-        src: "1寸.jpg"
-      }, {
-        src: "1寸.jpg"
-      }, {
-        src: "1寸.jpg"
-      }, {
-        src: "1寸.jpg"
-      }, {
-        src: "1寸.jpg"
-      }, {
-        src: "1寸.jpg"
-      },],
+      files: [],
       columnHeights: [0, 0, 0]
     }
   },
@@ -95,6 +75,13 @@ export default {
     }
   },
   methods: {
+    addImages(imageText) {
+      const image = JSON.parse(imageText)
+      let a = {
+        src: image.url
+      }
+      this.files.push(a)
+    },
     updateLayout(item) {
       const column = this.getMinColumnHeights(this.columnHeights)
       const itemTop = this.columnHeights[column]

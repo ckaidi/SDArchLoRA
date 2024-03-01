@@ -1,6 +1,9 @@
 package pkg
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 func handle(err error) {
 	if err != nil {
@@ -11,5 +14,12 @@ func handle(err error) {
 func retry(err error, f func()) {
 	if err != nil {
 		f()
+	}
+}
+
+func retryAfter(err error, second int) {
+	if err != nil {
+		a := 5 * time.Second
+		time.Sleep(a)
 	}
 }
