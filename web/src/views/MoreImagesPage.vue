@@ -12,7 +12,7 @@
         :animation-effect="options.animationEffect"
         :animation-duration="options.animationDuration"
         :animation-delay="options.animationDelay"
-        :lazyload="options.lazyload"
+        :lazyload=false
         :cross-origin=true
         :align="options.align"
     >
