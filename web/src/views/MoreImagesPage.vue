@@ -1,4 +1,23 @@
 <template>
+  <div class="modal modal-xl fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+       aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="exampleModalLabel">AI生成</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <SDSettingComponent :select-img="currentSelectUrl"/>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+          <button type="button" class="btn btn-primary">生成</button>
+          <button type="button" class="btn btn-primary">下载图片</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <SettingComponent @transfer="addImages"/>
   <div style="min-height: 100%; width:100%">
     <Waterfall
@@ -17,41 +36,38 @@
         :align="options.align"
     >
       <template #item="{ item, url, index }">
-        <div
-            class="bg-gray-900 rounded-lg shadow-md overflow-hidden transition-all
+        <div @mouseover="mouseover(item)" @mouseleave="mouseleave(item)"
+             class="bg-gray-900 rounded-lg shadow-md overflow-hidden transition-all
             duration-300 ease-linear hover:shadow-lg hover:shadow-gray-600 group">
           <div class="card">
-            <img :src=url :alt="item.name" class="card-img-top">
-            <div class="card-body">
-              <!--              <h5 class="card-title">Card title</h5>-->
-              <!--              <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's-->
-              <!--                content.</p>-->
-              <a href="#" class="btn btn-secondary">AI生图</a>
+            <div class="position-absolute top-0 left-0 d-flex justify-content-center align-items-center
+                 w-100 h-100 text-white fs-5 bg-body-secondary opacity-75"
+                 :class="{'cardButtonShow':item.show,'cardButtonHide':!item.show}">
+              <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                AI生图
+              </button>
             </div>
+            <img :src=url :alt="item.name" class="card-img-top">
           </div>
         </div>
       </template>
     </Waterfall>
-
-    <!--    <div class="flex justify-center py-10 bg-gray-900">-->
-    <!--      <button-->
-    <!--          class="px-5 py-2 rounded-full bg-gray-700 text-md text-white cursor-pointer hover:bg-gray-800 transition-all duration-300">-->
-    <!--        加载更多-->
-    <!--      </button>-->
-    <!--    </div>-->
+    <button class="btn btn-primary mb-4">
+      加载更多
+    </button>
   </div>
 </template>
 <script>
 import 'vue-waterfall-plugin-next/dist/style.css'
 import SettingComponent from "@/components/SettingComponent.vue";
+import SDSettingComponent from "@/components/SDSettingComponent.vue";
 import {LazyImg, Waterfall} from "vue-waterfall-plugin-next";
 
 export default {
-  components: {LazyImg, Waterfall, SettingComponent},
-  created() {
-  },
+  components: {LazyImg, Waterfall, SettingComponent, SDSettingComponent},
   data() {
     return {
+      currentSelectUrl: "",
       tabName: "SDRS",
       list: [],
       columnHeights: [0, 0, 0],
@@ -96,18 +112,33 @@ export default {
     }
   },
   methods: {
+    mouseover(item) {
+      item.show = true
+      this.currentSelectUrl = item.src.original.replace("medium_jpg", "large_jpg");
+    },
+    mouseleave(item) {
+      item.show = false
+    },
     addImages(imageText) {
       const image = JSON.parse(imageText)
       this.list.push({
         src: {
           original: image.url
-        }
+        },
+        show: false
       })
     }
   }
 }
 </script>
 <style scoped>
+.cardButtonShow {
+  visibility: visible;
+}
+
+.cardButtonHide {
+  visibility: hidden;
+}
 
 .item img {
   width: 100%;
