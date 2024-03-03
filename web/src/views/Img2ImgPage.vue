@@ -1,10 +1,11 @@
-<script setup>
+<template>
+  <div>
+    Img2img
+  </div>
+</template>
+<script>
 
 </script>
-
-<template>
-
-</template>
 
 <style scoped>
 

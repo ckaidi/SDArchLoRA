@@ -1,7 +1,10 @@
 <template>
-  <div style="width: 100%">
-    <MoreImagesPage class="m-0" style="width: 100%"/>
-  </div>
+  <!--  <div style="width: 100%">-->
+  <!--    <MoreImagesPage class="m-0" style="width: 100%"/>-->
+  <!--  </div>-->
+  <div id="liveAlertPlaceholder" class="container-fluid align-self-center align-content-center"
+       style="position: absolute;z-index: 9999;"></div>
+  <router-view/>
 </template>
 <script>
 import MoreImagesPage from "@/views/MoreImagesPage.vue";

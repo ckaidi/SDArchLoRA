@@ -6,4 +6,8 @@ import 'bootstrap/dist/js/bootstrap.min.js'
 
 import {createApp} from 'vue'
 import App from './App.vue'
-createApp(App).mount('#app')
+import router from "@/router/index.js";
+
+const instance = createApp(App)
+instance.use(router)
+instance.mount('#app')
