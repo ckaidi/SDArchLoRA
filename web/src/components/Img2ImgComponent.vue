@@ -15,19 +15,23 @@
       <div v-show="generateBase64Image===''" class="p-1 container img-thumbnail text-secondary">
         图片生成区
       </div>
-      <!--v.img是指base64格式的图片数据流-->
       <img class="img-thumbnail p-1" v-show="generateBase64Image!==''" :src=generateBase64Image alt="生成图片">
+      <button v-show="generateBase64Image!==''">局部重绘</button>
     </div>
   </div>
-  <SDSettingComponent ref="sdSettingComponent"/>
+  <SDSettingComponent ref="sdSettingComponent" :control-net-img="controlNetImg"/>
 </template>
 <script>
+import ScrawlComponent from "@/components/ScrawlComponent.vue";
 import SDSettingComponent from "@/components/SDSettingComponent.vue";
+import NavigationComponent from "@/components/NavigationComponent.vue";
 
 export default {
-  components: {SDSettingComponent},
+  components: {ScrawlComponent, NavigationComponent, SDSettingComponent},
   data() {
     return {
+      dw: 300,
+      controlNetImg: "https://image-static.segmentfault.com/403/138/4031383455-530adf1833207707",
       selectImg: "",
     }
   },

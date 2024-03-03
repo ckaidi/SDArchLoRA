@@ -3,16 +3,9 @@
     <canvas id="canvas" :width="width" :height="height">浏览器不支持canvas<!-- 如果不支持会显示这段文字 --></canvas>
     <template v-if="!toolsTabList">
       <div class="section">
-        <button class="btn" @click="setBackGround()">清空画布</button>
-      </div>
-      <div class="section">
-        <span class="info">选择画笔颜色：</span>
-        <input class="input-color" type="color" v-model="penColor"/>
-      </div>
-      <div class="section">
         <span class="info">选择橡皮擦：</span>
-        <button class="btn colorBtn" :style="'background-color:' + brackGroudColor + ';'" @click='setPenColor();'>
-          {{ brackGroudColor }}
+        <button class="btn colorBtn" :style="'background-color:' + backgroundColor + ';'" @click='setPenColor();'>
+          {{ backgroundColor }}
         </button>
       </div>
       <div class="section">
@@ -50,17 +43,9 @@ export default {
       type: Number,
       default: -1
     },
-    defaultPenColor: {
-      type: String,
-      default: '#000000'
-    },
     defaultPenSize: {
       type: Number,
       default: 4
-    },
-    defaultBackGroundColor: {
-      type: String,
-      default: "#ffffff"
     },
     toolsTabList: {
       type: Boolean,
@@ -69,12 +54,12 @@ export default {
   },
   data() {
     return {
-      penColor: "#00ff00",
+      penColor: "#ffffff",
       penWidth: 4,
       penClick: false,
       startAxisX: 0,
       startAxisY: 0,
-      brackGroudColor: "#ff0000",
+      backgroundColor: "#000000",
       progressValue: 0.2,
       tabList: [{
         label: '背景颜色',
@@ -114,13 +99,11 @@ export default {
         this.width = width;
         this.height = height;
       }
-      this.penColor = this.defaultPenColor;
-      this.brackGroudColor = this.defaultBackGroundColor;
       this.penWidth = this.defaultPenSize;
 
       let canvas = document.getElementById('canvas'); //获取canvas标签
       let ctx = canvas.getContext("2d");//创建 context 对象
-      ctx.fillStyle = this.brackGroudColor;//画布背景色
+      ctx.fillStyle = this.backgroundColor;//画布背景色
       ctx.fillRect(0, 0, width, height);//在画布上绘制 width * height 的矩形，从左上角开始 (0,0)
       canvas.addEventListener("mousemove", this.drawing); //鼠标移动事件
       canvas.addEventListener("mousedown", this.penDown); //鼠标按下事件
@@ -138,10 +121,10 @@ export default {
       }
       return 'btn colorBtn';
     },
-    setBackGround() {
+    clearCanvas() {
       const canvas = document.getElementById('canvas'); //获取canvas标签
       const ctx = canvas.getContext("2d");//创建 context 对象
-      ctx.fillStyle = this.brackGroudColor;//画布背景色
+      ctx.fillStyle = this.backgroundColor;//画布背景色
       ctx.fillRect(0, 0, this.width, this.height);//在画布上绘制 600x300 的矩形，从左上角开始 (0,0)
     },
     setPenWidth(event) {
@@ -151,7 +134,7 @@ export default {
     },
     //设置画笔颜色
     setPenColor(color = '') {
-      if (color === '') this.penColor = this.brackGroudColor;
+      if (color === '') this.penColor = this.backgroundColor;
       else this.penColor = color;
     },
     penDown(event) {
@@ -193,10 +176,6 @@ export default {
 </script>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-}
 
 #canvas-broad {
   margin: 0 auto;
@@ -206,26 +185,6 @@ export default {
 #canvas {
   border: 2px solid #ff6700;
   cursor: crosshair;
-  /*不能用这种方式给canvas设置宽高*/
-  /*width: 600px;*/
-  /*height: 300px;*/
-}
-
-.btn {
-  width: 70px;
-  height: 40px;
-  border-radius: 10px;
-  border: 1px solid #aaa; /*去掉<button>默认边框*/
-  outline: none; /*去掉<button>选中时的默认边框*/
-  cursor: pointer;
-}
-
-.input-color {
-  width: 70px;
-  height: 40px;
-  border-radius: 10px;
-  border: 0; /*去掉<button>默认边框*/
-  outline: none; /*去掉<button>选中时的默认边框*/
 }
 
 #image_png {

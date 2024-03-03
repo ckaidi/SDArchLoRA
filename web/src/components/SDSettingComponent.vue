@@ -10,7 +10,9 @@
   <div class="m-2 row">
     <label for="exampleFormControlTextarea1" class="text-start start-0 form-label fw-bold">ControlNet</label>
     <div class="row">
-      <img v-show="controlNetImg!==''&&controlNetImg!==undefined" class="img-thumbnail col-6 p-1" alt="...">
+      <div v-show="controlNetImg!==''&&controlNetImg!==undefined" class="col-6 p-1">
+        <img :src="controlNetImg" class="img-thumbnail" alt="...">
+      </div>
       <div v-show="controlNetImg===''||controlNetImg===undefined"
            class="col-6 p-1 container img-thumbnail text-secondary"
            @click="openFileUpload" style="cursor: pointer;min-height: 200px">
