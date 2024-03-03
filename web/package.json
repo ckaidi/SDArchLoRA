@@ -9,17 +9,24 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tomiaa/canvas-graffiti": "^0.0.3",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
     "bootstrap-vue": "^2.23.1",
+    "element": "^0.1.4",
+    "element-ui": "^2.15.14",
     "jquery": "^3.7.1",
+    "node-uuid": "^1.4.8",
     "popper.js": "^1.16.1",
+    "uuid": "^9.0.1",
     "vue": "^3.4.15",
+    "vue-konva": "^3.0.2",
     "vue-router": "^4.2.4",
     "vue-waterfall-plugin-next": "^2.3.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.3",
+    "sass": "^1.71.1",
     "vite": "^5.0.11"
   }
 }

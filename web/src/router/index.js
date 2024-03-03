@@ -6,6 +6,7 @@ import {
 import MoreImagesPage from '../views/MoreImagesPage.vue'
 import Txt2ImgPage from "@/views/Txt2ImgPage.vue";
 import Img2ImgPage from "../views/Img2ImgPage.vue";
+import ScrawlPage from "@/views/ScrawlPage.vue";
 
 const routes = [
     {
@@ -22,6 +23,11 @@ const routes = [
         path: "/img2img",
         name: "img2img",
         component: Img2ImgPage,
+    },
+    {
+        path: "/scrawl",
+        name: "scrawl",
+        component: ScrawlPage,
     }
 ];
 
