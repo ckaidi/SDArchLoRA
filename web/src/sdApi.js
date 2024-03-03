@@ -12,7 +12,6 @@ function sendRequest(url, callback, data) {
                 const image = images[0]
                 callback(image)
             }
-            console.log(result);
         } else {
             console.error('Request failed with status:', xhr.status);
         }

@@ -18,6 +18,15 @@ type Img2imgRequestJson struct {
 	NegativePrompt string `json:"negative_prompt"`
 }
 
+type ExtraSingleRequestJson struct {
+	Img   string `json:"img"`
+	Scale int    `json:"scale"`
+}
+
+type AlwaysonScripts struct {
+	Controlnet ControlNetJson `json:"Controlnet"`
+}
+
 type Txt2imgJson struct {
 	Prompt         string `json:"prompt"`
 	NegativePrompt string `json:"negative_prompt"`
@@ -72,8 +81,8 @@ type Txt2imgJson struct {
 	//ScriptArgs        []interface{} `json:"script_args"`
 	//SendImages        bool          `json:"send_images"`
 	//SaveImages        bool          `json:"save_images"`
-	//AlwaysonScripts   struct {
-	//} `json:"alwayson_scripts"`
+	AlwaysonScripts struct {
+	} `json:"alwayson_scripts"`
 	//Infotext string `json:"infotext"`
 }
 
@@ -134,9 +143,47 @@ type Img2imgJson struct {
 	//ScriptArgs             []interface{} `json:"script_args"`
 	//SendImages             bool          `json:"send_images"`
 	//SaveImages             bool          `json:"save_images"`
-	//AlwaysonScripts        struct {
-	//} `json:"alwayson_scripts"`
+	AlwaysonScripts struct {
+	} `json:"alwayson_scripts"`
 	//Infotext string `json:"infotext"`
+}
+
+type ExtraSingleJson struct {
+	ResizeMode                int    `json:"resize_mode"`
+	ShowExtrasResults         bool   `json:"show_extras_results"`
+	GfpganVisibility          int    `json:"gfpgan_visibility"`
+	CodeformerVisibility      int    `json:"codeformer_visibility"`
+	CodeformerWeight          int    `json:"codeformer_weight"`
+	UpscalingResize           int    `json:"upscaling_resize"`
+	UpscalingResizeW          int    `json:"upscaling_resize_w"`
+	UpscalingResizeH          int    `json:"upscaling_resize_h"`
+	UpscalingCrop             bool   `json:"upscaling_crop"`
+	Upscaler1                 string `json:"upscaler_1"`
+	Upscaler2                 string `json:"upscaler_2"`
+	ExtrasUpscaler2Visibility int    `json:"extras_upscaler_2_visibility"`
+	UpscaleFirst              bool   `json:"upscale_first"`
+	Image                     string `json:"image"`
+}
+
+type ControlNetArgs struct {
+	Enabled       bool        `json:"enabled"`
+	Module        string      `json:"module"`
+	Model         string      `json:"model"`
+	Weight        float64     `json:"weight"`
+	Image         []string    `json:"image"`
+	ResizeMode    int         `json:"resize_mode"`
+	Lowvram       interface{} `json:"lowvram"`
+	ProcessorRes  int         `json:"processor_res"`
+	ThresholdA    int         `json:"threshold_a"`
+	ThresholdB    int         `json:"threshold_b"`
+	GuidanceStart float64     `json:"guidance_start"`
+	GuidanceEnd   float64     `json:"guidance_end"`
+	ControlMode   int         `json:"control_mode"`
+	PixelPerfect  interface{} `json:"pixel_perfect"`
+}
+
+type ControlNetJson struct {
+	Args []ControlNetArgs `json:"args"`
 }
 
 type SDResult struct {
@@ -265,6 +312,44 @@ func defaultImg2imgJson() Img2imgJson {
 	}
 }
 
+func defaultExtraSingleJson() ExtraSingleJson {
+	return ExtraSingleJson{
+		ResizeMode:                0,
+		ShowExtrasResults:         false,
+		GfpganVisibility:          0,
+		CodeformerVisibility:      0,
+		CodeformerWeight:          0,
+		UpscalingResize:           2,
+		UpscalingResizeW:          0,
+		UpscalingResizeH:          0,
+		UpscalingCrop:             false,
+		Upscaler1:                 "DAT x2",
+		Upscaler2:                 "SwinIR 4x",
+		ExtrasUpscaler2Visibility: 0,
+		UpscaleFirst:              false,
+		Image:                     "",
+	}
+}
+
+func defaultControlNetArgs() ControlNetArgs {
+	return ControlNetArgs{
+		Enabled:       true,
+		Module:        "",
+		Model:         "",
+		Weight:        0,
+		Image:         nil,
+		ResizeMode:    0,
+		Lowvram:       nil,
+		ProcessorRes:  0,
+		ThresholdA:    0,
+		ThresholdB:    0,
+		GuidanceStart: 0,
+		GuidanceEnd:   0,
+		ControlMode:   0,
+		PixelPerfect:  nil,
+	}
+}
+
 func Txt2img(w http.ResponseWriter, r *http.Request) {
 	// 检查请求方法是否为 POST
 	if r.Method != "POST" {
@@ -315,6 +400,32 @@ func Img2img(w http.ResponseWriter, r *http.Request) {
 	handle(err)
 	reader := strings.NewReader(string(jsonData))
 	response, err := http.Post(sdServer+"/sdapi/v1/img2img", "application/json", reader)
+	handle(err)
+	dataByte, err = io.ReadAll(response.Body)
+	handle(err)
+	_, err = w.Write(dataByte)
+	handle(err)
+}
+
+func ExtraSingleImage(w http.ResponseWriter, r *http.Request) {
+	// 检查请求方法是否为 POST
+	if r.Method != "POST" {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	dataByte, err := io.ReadAll(r.Body)
+	handle(err)
+	extraSingleJson := new(ExtraSingleRequestJson)
+	err = json.Unmarshal(dataByte, extraSingleJson)
+	handle(err)
+	extraSingle := defaultExtraSingleJson()
+	extraSingle.UpscalingResize = extraSingleJson.Scale
+	extraSingle.Image = extraSingleJson.Img
+	jsonData, err := json.Marshal(extraSingle)
+	handle(err)
+	reader := strings.NewReader(string(jsonData))
+	response, err := http.Post(sdServer+"/sdapi/v1/extra-single-image", "application/json", reader)
 	handle(err)
 	dataByte, err = io.ReadAll(response.Body)
 	handle(err)
