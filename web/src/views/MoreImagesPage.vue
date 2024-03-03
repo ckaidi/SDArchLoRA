@@ -8,17 +8,18 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <SDSettingComponent :select-img="currentSelectUrl"/>
+          <SDSettingComponent :select-img="currentSelectUrl" :generate-base64-image="generateBase64Image"
+                              ref="sdSettingComponent"/>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-          <button type="button" class="btn btn-primary">生成</button>
+          <button type="button" class="btn btn-primary" @click="sdGenerate">生成</button>
           <button type="button" class="btn btn-primary">下载图片</button>
         </div>
       </div>
     </div>
   </div>
-  <SettingComponent @transfer="addImages"/>
+  <SearchComponent @transfer="addImages"/>
   <div style="min-height: 100%; width:100%">
     <Waterfall
         :list="list"
@@ -59,14 +60,16 @@
 </template>
 <script>
 import 'vue-waterfall-plugin-next/dist/style.css'
-import SettingComponent from "@/components/SettingComponent.vue";
+import SearchComponent from "@/components/SearchComponent.vue";
 import SDSettingComponent from "@/components/SDSettingComponent.vue";
 import {LazyImg, Waterfall} from "vue-waterfall-plugin-next";
+import {img2img} from "@/sdApi.js";
 
 export default {
-  components: {LazyImg, Waterfall, SettingComponent, SDSettingComponent},
+  components: {SearchComponent, LazyImg, Waterfall, SDSettingComponent},
   data() {
     return {
+      generateBase64Image: "",
       currentSelectUrl: "",
       tabName: "SDRS",
       list: [],
@@ -112,6 +115,14 @@ export default {
     }
   },
   methods: {
+    sdGenerate() {
+      const negativePrompt = this.$refs.sdSettingComponent.negativePrompt
+      const prompt = this.$refs.sdSettingComponent.prompt
+      const that = this
+      img2img(this.currentSelectUrl, prompt, negativePrompt, function (imageBaseString) {
+        that.generateBase64Image = "data:image/png;base64," + imageBaseString
+      })
+    },
     mouseover(item) {
       item.show = true
       this.currentSelectUrl = item.src.original.replace("medium_jpg", "large_jpg");

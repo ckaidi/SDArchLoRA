@@ -15,7 +15,7 @@ export default {
       const that = this
       // 创建一个 WebSocket 对象，连接到本地的 8080 端口
       if (this.keyword !== "") {
-        const ws = new WebSocket("ws://127.0.0.1:8081/archdaily?" + "keyword=" + this.keyword + "&page=1");
+        const ws = new WebSocket("ws://192.168.1.5:8081/archdaily?" + "keyword=" + this.keyword + "&page=1");
 
         // 注册 onopen 事件的回调函数
         ws.onopen = function () {
