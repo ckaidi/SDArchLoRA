@@ -1,6 +1,6 @@
 <template>
   <NavigationComponent :activate-tab="currentTab"/>
-  <Img2ImgComponent :generate-base64-image="generateBase64Img" :is-upload="true"/>
+  <Txt2ImgComponent :generate-base64-image="generateBase64Image"/>
   <div>
     Img2img
   </div>
@@ -9,14 +9,14 @@
 
 import {defineComponent} from "vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
-import Img2ImgComponent from "@/components/Img2ImgComponent.vue";
+import Txt2ImgComponent from "@/components/Txt2ImgComponent.vue";
 
 export default defineComponent({
-  components: {NavigationComponent, Img2ImgComponent},
+  components: {Txt2ImgComponent, NavigationComponent},
   data() {
     return {
-      currentTab: "图生图",
-      generateBase64Img: "",
+      generateBase64Image: "",
+      currentTab: "文生图"
     }
   }
 })

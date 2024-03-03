@@ -1,4 +1,5 @@
 <template>
+  <NavigationComponent :activate-tab="currentTab"/>
   <div class="modal modal-xl fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
        aria-hidden="true">
     <div class="modal-dialog modal-fullscreen">
@@ -8,8 +9,8 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <SDSettingComponent :select-img="currentSelectUrl" :generate-base64-image="generateBase64Image"
-                              ref="sdSettingComponent"/>
+          <Img2ImgComponent :select-img="currentSelectUrl" :generate-base64-image="generateBase64Image"
+                            ref="img2imgComponent"/>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
@@ -61,14 +62,16 @@
 <script>
 import 'vue-waterfall-plugin-next/dist/style.css'
 import SearchComponent from "@/components/SearchComponent.vue";
-import SDSettingComponent from "@/components/SDSettingComponent.vue";
+import NavigationComponent from "@/components/NavigationComponent.vue";
+import Img2ImgComponent from "@/components/Img2ImgComponent.vue";
 import {LazyImg, Waterfall} from "vue-waterfall-plugin-next";
 import {img2img} from "@/sdApi.js";
 
 export default {
-  components: {SearchComponent, LazyImg, Waterfall, SDSettingComponent},
+  components: {NavigationComponent, SearchComponent, LazyImg, Waterfall, Img2ImgComponent},
   data() {
     return {
+      currentTab: "搜图",
       generateBase64Image: "",
       currentSelectUrl: "",
       tabName: "SDRS",
@@ -116,8 +119,8 @@ export default {
   },
   methods: {
     sdGenerate() {
-      const negativePrompt = this.$refs.sdSettingComponent.negativePrompt
-      const prompt = this.$refs.sdSettingComponent.prompt
+      const negativePrompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.negativePrompt
+      const prompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.prompt
       const that = this
       img2img(this.currentSelectUrl, prompt, negativePrompt, function (imageBaseString) {
         that.generateBase64Image = "data:image/png;base64," + imageBaseString
