@@ -1,6 +1,7 @@
 <template>
   <NavigationComponent :activate-tab="currentTab"/>
-  <div class="modal modal-xl fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+  <div class="modal modal-xl fade" id="exampleModal" tabindex="-1"
+       aria-labelledby="exampleModalLabel"
        aria-hidden="true">
     <div class="modal-dialog modal-fullscreen">
       <div class="modal-content">
