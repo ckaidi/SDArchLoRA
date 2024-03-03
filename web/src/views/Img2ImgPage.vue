@@ -1,9 +1,7 @@
 <template>
   <NavigationComponent :activate-tab="currentTab"/>
-  <Img2ImgComponent :generate-base64-image="generateBase64Img" :is-upload="true"/>
-  <div>
-    Img2img
-  </div>
+  <div class="col-12" style="height: 10px"/>
+  <Img2ImgComponent :select-img="selectImg" :generate-base64-image="generateBase64Img" :is-upload="true"/>
 </template>
 <script>
 
@@ -16,6 +14,7 @@ export default defineComponent({
   data() {
     return {
       currentTab: "图生图",
+      selectImg: "",
       generateBase64Img: "",
     }
   }

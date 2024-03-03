@@ -1,9 +1,7 @@
 <template>
   <NavigationComponent :activate-tab="currentTab"/>
+  <div class="col-12" style="height: 10px"/>
   <Txt2ImgComponent :generate-base64-image="generateBase64Image"/>
-  <div>
-    Img2img
-  </div>
 </template>
 <script>
 

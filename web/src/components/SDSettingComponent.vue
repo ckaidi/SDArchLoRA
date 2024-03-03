@@ -10,8 +10,15 @@
   <div class="m-2 row">
     <label for="exampleFormControlTextarea1" class="text-start start-0 form-label fw-bold">ControlNet</label>
     <div class="row">
-      <img :src=selectImg
-           class="img-thumbnail col-6 p-1" alt="...">
+      <img v-show="controlNetImg!==''&&controlNetImg!==undefined" class="img-thumbnail col-6 p-1" alt="...">
+      <div v-show="controlNetImg===''||controlNetImg===undefined"
+           class="col-6 p-1 container img-thumbnail text-secondary"
+           @click="openFileUpload" style="cursor: pointer;min-height: 200px">
+        <input type="file" ref="fileInput" style="display: none" @change="handleFileUpload">
+        <div>
+          点击上传图片
+        </div>
+      </div>
       <div class="container-fluid col-6 row">
         <div class="input-group">
           <div class="col-2 m-1">
@@ -59,6 +66,24 @@ export default {
           "pixelated, low resolution, saturated, high contrast, oversharpened,(cloud),dirt"
     }
   },
+  props: {
+    controlNetImg: "",
+  },
+  methods: {
+    openFileUpload() {
+      this.$refs.fileInput.click();
+    },
+    handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.$refs.image.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  }
 }
 </script>
 <style>

@@ -9,7 +9,8 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <Img2ImgComponent :select-img="currentSelectUrl" :generate-base64-image="generateBase64Image"
+          <Img2ImgComponent :is-upload="false" :select-img="currentSelectUrl"
+                            :generate-base64-image="generateBase64Image"
                             ref="img2imgComponent"/>
         </div>
         <div class="modal-footer">

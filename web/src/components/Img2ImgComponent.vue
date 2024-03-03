@@ -3,9 +3,10 @@
     <div class="col-6">
       <img v-show="!isUpload" :src=selectImg
            class="img-thumbnail p-1" alt="原始图像">
-      <div v-show="generateBase64Image===''" class="p-1 container img-thumbnail text-secondary" @click="openFileUpload">
+      <div v-show="selectImg===''" class="p-1 container img-thumbnail text-secondary"
+           @click="openFileUpload" style="cursor: pointer">
         <input type="file" ref="fileInput" style="display: none" @change="handleFileUpload">
-        <div style="cursor: pointer">
+        <div>
           点击上传原始图像
         </div>
       </div>
