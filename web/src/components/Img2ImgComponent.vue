@@ -25,6 +25,11 @@ import SDSettingComponent from "@/components/SDSettingComponent.vue";
 
 export default {
   components: {SDSettingComponent},
+  data() {
+    return {
+      selectImg: "",
+    }
+  },
   props: {
     isUpload: false,
     selectImg: "",
