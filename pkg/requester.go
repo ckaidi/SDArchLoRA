@@ -1,14 +1,26 @@
 package pkg
 
 import (
+	"bytes"
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
+	_ "golang.org/x/image/bmp" // Import BMP format
+	"image"
+	_ "image/jpeg" // Import JPEG format
+	_ "image/png"  // Import PNG format
 	"io"
+	"math"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 )
+
+type ImgConfig struct {
+	Base64 string
+	Width  int
+	Height int
+}
 
 var useProxy = false
 
@@ -67,27 +79,29 @@ func fetch(webUrl string, method string, callback func(*http.Response)) {
 	}
 }
 
-func DownloadImage(url string, path string) {
-	Get(url, func(response *http.Response) {
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			handle(err)
-		}(response.Body)
-		// 创建本地文件，用于保存图片
-		file, err := os.Create(path)
-		if err != nil {
-			fmt.Println("创建文件失败:", err)
-			return
-		}
-		// 延迟关闭文件
-		defer func(file *os.File) {
-			err := file.Close()
-			handle(err)
-		}(file)
-		// 将图片的响应 Body 复制到文件中
-		_, err = io.Copy(file, response.Body)
+// Img2Base64 下载图片
+func Img2Base64(imgUrl string) ImgConfig {
+	response, err := http.Get(imgUrl)
+	handle(err)
+	defer func(Body io.ReadCloser) {
+		err = Body.Close()
 		handle(err)
-	})
-}
+	}(response.Body)
+	imageData, err := io.ReadAll(response.Body)
+	handle(err)
+	// 读取图片数据
+	reader := bytes.NewReader(imageData)
+	config, _, err := image.DecodeConfig(reader)
+	handle(err)
 
-//func Header
+	// 将图片数据转换为base64字符串
+	base64Image := base64.StdEncoding.EncodeToString(imageData)
+	scale2 := config.Width * config.Height / 512 / 512
+	scale := math.Pow(float64(scale2), 0.5)
+	handle(err)
+	return ImgConfig{
+		Base64: base64Image,
+		Width:  int(float64(config.Width) / scale),
+		Height: int(float64(config.Height) / scale),
+	}
+}
