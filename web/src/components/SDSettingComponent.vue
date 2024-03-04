@@ -14,14 +14,14 @@
         <img :src="controlNetImg" class="img-thumbnail" alt="...">
       </div>
       <div v-show="controlNetImg===''||controlNetImg===undefined"
-           class="col-6 p-1 container img-thumbnail text-secondary"
+           class="col-6 p-1 img-thumbnail text-secondary"
            @click="openFileUpload" style="cursor: pointer;min-height: 200px">
         <input type="file" ref="fileInput" style="display: none" @change="handleFileUpload">
         <div>
           点击上传图片
         </div>
       </div>
-      <div class="container-fluid col-6 row">
+      <div class="col-6 row">
         <div class="input-group">
           <div class="col-2 m-1">
             <div class="form-check">

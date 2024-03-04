@@ -1,5 +1,5 @@
 <template>
-  <div class="row" style="min-height: 200px">
+  <div class="container-fluid row" style="min-height: 200px">
     <div class="col-6 offset-3">
       <div v-show="generateBase64Image===''" class="p-1 container img-thumbnail text-secondary">
         图片生成区

@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid m-2 row">
+  <div class="container-fluid mt-2 mb-2 row">
     <div class="col-10">
       <input type="text" class="form-control" placeholder="关键字" v-model="keyword" @keydown.enter="search">
     </div>

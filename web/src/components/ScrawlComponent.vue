@@ -23,7 +23,7 @@
         <span class="info">输出画板内容到下面的图片：</span>
         <button class="btn" @click="createImage();">EXPORT</button>
       </div>
-      <img src="/rhino-logo.png" id="image_png" alt="" style="width: 300px;height: 300px">
+      <img id="image_png" alt="" style="width: 300px;height: 300px">
     </template>
   </div>
 </template>
@@ -167,7 +167,7 @@ export default {
     createImage() {
       console.log('-------');
       const canvas = document.getElementById('canvas'); //获取canvas标签
-       //将画板保存为图片格式的函数
+      //将画板保存为图片格式的函数
       // console.log('=====',img_png_src);//data:image/png;base64,iVBOR.....
       document.getElementById("image_png").src = canvas.toDataURL("image/png");
     }

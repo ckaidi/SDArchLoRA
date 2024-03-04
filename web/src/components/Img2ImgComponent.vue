@@ -1,5 +1,5 @@
 <template>
-  <div class="row" style="min-height: 200px">
+  <div class="container-fluid row" style="min-height: 200px">
     <div class="col-6">
       <img v-show="!isUpload" :src=selectImg
            class="img-thumbnail p-1" alt="原始图像">
@@ -16,7 +16,6 @@
         图片生成区
       </div>
       <img class="img-thumbnail p-1" v-show="generateBase64Image!==''" :src=generateBase64Image alt="生成图片">
-      <button v-show="generateBase64Image!==''">局部重绘</button>
     </div>
   </div>
   <SDSettingComponent ref="sdSettingComponent" :control-net-img="controlNetImg"/>
