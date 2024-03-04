@@ -124,8 +124,8 @@ export default {
       const negativePrompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.negativePrompt
       const prompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.prompt
       const that = this
-      img2img(this.currentSelectUrl, prompt, negativePrompt, function (imageBaseString) {
-        that.generateBase64Image = "data:image/png;base64," + imageBaseString
+      img2img(this.currentSelectUrl, prompt, negativePrompt, function (data) {
+        that.generateBase64Image = "data:image/png;base64," + data
       })
     },
     mouseover(item) {

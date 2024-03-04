@@ -4,7 +4,8 @@
   <Txt2ImgComponent :generate-base64-image="generateBase64Image" ref="txt2imgComponent"/>
   <!--  <button class="btn btn-primary">下载图片</button>-->
   <div style="height: 72px"/>
-  <FooterButtonComponent/>
+  <FooterButtonComponent :generate-img="generateBase64Image" :generate-func="sdGenerate"
+                         :generate-img-height="generateImgHeight" :generate-img-width="generateImgWidth"/>
 </template>
 <script>
 
@@ -20,6 +21,8 @@ export default defineComponent({
   data() {
     return {
       generateBase64Image: "",
+      generateImgWidth: 0,
+      generateImgHeight: 0,
       currentTab: "文生图"
     }
   },
@@ -28,8 +31,17 @@ export default defineComponent({
       const negativePrompt = this.$refs.txt2imgComponent.$refs.sdSettingComponent.negativePrompt
       const prompt = this.$refs.txt2imgComponent.$refs.sdSettingComponent.prompt
       const that = this
-      txt2img(prompt, negativePrompt, function (imageBaseString) {
-        that.generateBase64Image = "data:image/png;base64," + imageBaseString
+      txt2img(prompt, negativePrompt, function (data) {
+        const images = data['images']
+        if (images !== null && images !== undefined) {
+          if (images.length > 0)
+            that.generateBase64Image = "data:image/png;base64," + images[0]
+        }
+        const parameters = data['parameters']
+        if (parameters !== null && parameters !== undefined) {
+          that.generateImgWidth = parameters['width']
+          that.generateImgHeight = parameters['height']
+        }
       })
     }
   }

@@ -1,4 +1,4 @@
-export const sdServer = "http://192.168.1.5:8081"
+export const sdServer = "http://127.0.0.1:8081"
 
 function sendRequest(url, callback, data) {
     const xhr = new XMLHttpRequest();
@@ -7,11 +7,7 @@ function sendRequest(url, callback, data) {
     xhr.onload = function () {
         if (xhr.status === 200) {
             const result = JSON.parse(xhr.responseText)
-            const images = result['images']
-            if (images.length > 0) {
-                const image = images[0]
-                callback(image)
-            }
+            callback(result)
         } else {
             console.error('Request failed with status:', xhr.status);
         }

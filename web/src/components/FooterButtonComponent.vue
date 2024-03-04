@@ -2,14 +2,14 @@
   <div class="modal modal-xl fade" id="scrawlModal" tabindex="-1"
        aria-labelledby="exampleModalLabel"
        aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen">
+    <div class="modal-dialog modal-dialog modal-dialog-centered" id="scrawlModalDialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h1 class="modal-title fs-5" id="exampleModalLabel">AI生成</h1>
+          <h1 class="modal-title fs-5" id="exampleModalLabel">局部重绘</h1>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
-          <ScrawlComponent :width="dw" :height="dw"/>
+        <div class="modal-body" id="scrawlModalBody">
+          <ScrawlComponent :generate-base64-image="generateImg" :width="generateImgWidth" :height="generateImgHeight"/>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
@@ -21,8 +21,10 @@
   </div>
 
   <div class="modal-footer fixed-bottom bg-light border-top border-1 secondary-subtle align-content-end">
-    <button class="btn btn-primary m-2" data-bs-toggle="modal" data-bs-target="#scrawlModal">局部重绘</button>
-    <button class="btn btn-primary m-2">生成</button>
+    <button :disabled="generateImg===''" class="btn btn-primary m-2" data-bs-toggle="modal"
+            data-bs-target="#scrawlModal">局部重绘
+    </button>
+    <button class="btn btn-primary m-2" @click="generateFunc">生成</button>
   </div>
 </template>
 <script>
@@ -34,11 +36,22 @@ import ScrawlComponent from "@/components/ScrawlComponent.vue";
 
 export default defineComponent({
   components: {ScrawlComponent, Img2ImgComponent, NavigationComponent},
-  data() {
-    return {
-      "dw": 300
-    }
-  }
+  props: {
+    // base64Img
+    generateImg: {
+      type: String,
+      default: '',
+    },
+    generateImgWidth: {
+      type: Number,
+      default: 0,
+    },
+    generateImgHeight: {
+      type: Number,
+      default: 0,
+    },
+    generateFunc: null
+  },
 })
 </script>
 
