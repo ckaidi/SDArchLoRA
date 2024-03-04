@@ -16,6 +16,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+          <button type="button" class="btn btn-primary" @click="sdGenerate">局部重绘</button>
           <button type="button" class="btn btn-primary" @click="sdGenerate">生成</button>
           <button type="button" class="btn btn-primary">下载图片</button>
         </div>
@@ -125,7 +126,16 @@ export default {
       const prompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.prompt
       const that = this
       img2img(this.currentSelectUrl, prompt, negativePrompt, function (data) {
-        that.generateBase64Image = "data:image/png;base64," + data
+        const images = data['images']
+        if (images !== null && images !== undefined) {
+          if (images.length > 0)
+            that.generateBase64Image = "data:image/png;base64," + images[0]
+        }
+        const parameters = data['parameters']
+        if (parameters !== null && parameters !== undefined) {
+          that.generateImgWidth = parameters['width']
+          that.generateImgHeight = parameters['height']
+        }
       })
     },
     mouseover(item) {

@@ -2,19 +2,20 @@
   <div class="modal modal-xl fade" id="scrawlModal" tabindex="-1"
        aria-labelledby="exampleModalLabel"
        aria-hidden="true">
-    <div class="modal-dialog modal-dialog modal-dialog-centered" id="scrawlModalDialog">
-      <div class="modal-content">
-        <div class="modal-header">
+    <div class="modal-dialog modal-dialog modal-dialog-centered modal-dialog-scrollable" id="scrawlModalDialog">
+      <div class="modal-content" id="scrawlModalContent">
+        <div class="modal-header" id="scrawlHeader">
           <h1 class="modal-title fs-5" id="exampleModalLabel">局部重绘</h1>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body" id="scrawlModalBody">
-          <ScrawlComponent :generate-base64-image="generateImg" :width="generateImgWidth" :height="generateImgHeight"/>
+          <ScrawlComponent ref="scrawlComponent" :generate-base64-image="generateImg" :width="generateImgWidth"
+                           :height="generateImgHeight"/>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-          <button type="button" class="btn btn-primary" @click="sdGenerate">生成</button>
-          <button type="button" class="btn btn-primary">下载图片</button>
+          <button type="button" class="btn btn-primary" @click="clearCanvas">清空画布</button>
+          <button type="button" class="btn btn-primary">重新生成</button>
         </div>
       </div>
     </div>
@@ -52,6 +53,11 @@ export default defineComponent({
     },
     generateFunc: null
   },
+  methods: {
+    clearCanvas() {
+      this.$refs.scrawlComponent.clearCanvas()
+    }
+  }
 })
 </script>
 

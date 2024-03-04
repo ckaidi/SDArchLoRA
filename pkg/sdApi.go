@@ -191,7 +191,7 @@ type SDResult struct {
 	Info   string   `json:"info"`
 }
 
-const sdServer = "http://127.0.0.1:7860"
+const sdServer = "http://10.0.0.246:7860"
 
 func defaultTxt2imgJson() Txt2imgJson {
 	return Txt2imgJson{

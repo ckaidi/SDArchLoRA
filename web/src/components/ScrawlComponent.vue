@@ -1,32 +1,34 @@
 <template>
-  <div id="canvas-broad">
-    <canvas class=" border-0" id="canvas" :width="width" :height="height">浏览器不支持canvas
-      <!-- 如果不支持会显示这段文字 --></canvas>
-    <!--    <template v-if="!toolsTabList">-->
-    <!--      <div class="section">-->
-    <!--        <span class="info">选择橡皮擦：</span>-->
-    <!--        <button class="btn colorBtn" :style="'background-color:' + backgroundColor + ';'" @click='setPenColor();'>-->
-    <!--          {{ backgroundColor }}-->
-    <!--        </button>-->
-    <!--      </div>-->
-    <!--      <div class="section">-->
-    <!--        <span class="info">选择画笔大小：</span>-->
-    <!--        <progress :value="progressValue"-->
-    <!--                  style="cursor: pointer;"-->
-    <!--                  id="progress"-->
-    <!--                  max="1"-->
-    <!--                  :title="progressValue * 100 +'%'"-->
-    <!--                  @click="setPenWidth">-->
-    <!--        </progress>-->
-    <!--        <span style="margin-left: 0.3125rem;">{{ 20 * progressValue }}px</span>-->
-    <!--      </div>-->
-    <!--      <div class="section">-->
-    <!--        <span class="info">输出画板内容到下面的图片：</span>-->
-    <!--        <button class="btn" @click="createImage();">EXPORT</button>-->
-    <!--      </div>-->
-    <!--      <img id="image_png" alt="" style="width: 300px;height: 300px">-->
-    <!--    </template>-->
+  <canvas class=" border-0" id="canvas" :width="width" :height="height">浏览器不支持canvas
+    <!-- 如果不支持会显示这段文字 --></canvas>
+  <div>
+    <label for="customRange1" class="form-label">画笔大小</label>
+    <input type="range" class="form-range" id="customRange1" min="1" max="15" v-model="penWidth">
   </div>
+  <!--    <template v-if="!toolsTabList">-->
+  <!--      <div class="section">-->
+  <!--        <span class="info">选择橡皮擦：</span>-->
+  <!--        <button class="btn colorBtn" :style="'background-color:' + backgroundColor + ';'" @click='setPenColor();'>-->
+  <!--          {{ backgroundColor }}-->
+  <!--        </button>-->
+  <!--      </div>-->
+  <!--      <div class="section">-->
+  <!--        <span class="info">选择画笔大小：</span>-->
+  <!--        <progress :value="progressValue"-->
+  <!--                  style="cursor: pointer;"-->
+  <!--                  id="progress"-->
+  <!--                  max="1"-->
+  <!--                  :title="progressValue * 100 +'%'"-->
+  <!--                  @click="setPenWidth">-->
+  <!--        </progress>-->
+  <!--        <span style="margin-left: 0.3125rem;">{{ 20 * progressValue }}px</span>-->
+  <!--      </div>-->
+  <!--      <div class="section">-->
+  <!--        <span class="info">输出画板内容到下面的图片：</span>-->
+  <!--        <button class="btn" @click="createImage();">EXPORT</button>-->
+  <!--      </div>-->
+  <!--      <img id="image_png" alt="" style="width: 300px;height: 300px">-->
+  <!--    </template>-->
 </template>
 
 <script>
@@ -67,7 +69,6 @@ export default {
       startAxisX: 0,
       startAxisY: 0,
       backgroundColor: "#ffffffaa",
-      progressValue: 0.2,
       tabList: [{
         label: '背景颜色',
         id: 'back-ground-color'
@@ -94,10 +95,28 @@ export default {
       this.init();
     })
     myModalEl.addEventListener('shown.bs.modal', event => {
-      const modalBody = document.getElementById('scrawlModalDialog')
-      const style = getComputedStyle(modalBody)
-      that.modalMarginTop = Number(style.getPropertyValue('margin-top').replace("px", ""))
+      that.modalMarginTop = 0
+      const modalDialog = document.getElementById('scrawlModalDialog')
+      let style = getComputedStyle(modalDialog)
+      that.modalMarginTop += Number(style.getPropertyValue('margin-top').replace("px", ""))
       that.modalMarginLeft = Number(style.getPropertyValue('margin-left').replace("px", ""))
+      const bodyHeight = Number(style.getPropertyValue('height').replace("px", ""))
+
+      const modalHeader = document.getElementById('scrawlHeader')
+      style = getComputedStyle(modalHeader)
+      that.modalMarginTop += Number(style.getPropertyValue('height').replace("px", ""))
+
+      const modalBody = document.getElementById('scrawlModalBody')
+      style = getComputedStyle(modalBody)
+      // that.modalMarginTop += Number(style.getPropertyValue('padding-top').replace("px", ""))
+
+      const modalContent = document.getElementById('scrawlModalContent')
+      style = getComputedStyle(modalContent)
+      const contentHeight = Number(style.getPropertyValue('height').replace("px", ""))
+      that.modalMarginTop += (bodyHeight - contentHeight) / 2
+
+      console.log(that.modalMarginTop)
+      console.log(that.modalMarginLeft)
     })
   },
   methods: {
@@ -108,13 +127,6 @@ export default {
 
       let height = this.height;
       let width = this.width;
-      if (width === -1) {
-        const cbw = document.getElementById('canvas-broad');
-        width = cbw.offsetWidth * 0.9;
-        height = cbw.offsetHeight * 0.6;
-        this.width = width;
-        this.height = height;
-      }
       this.penWidth = this.defaultPenSize;
 
       let canvas = document.getElementById('canvas'); //获取canvas标签
@@ -124,16 +136,26 @@ export default {
       const img = new Image();
       img.src = this.generateBase64Image;
       img.onload = function () {
-        draw();
+        that.drawImg(ctx, img);
       }
-
-      function draw() {
-        ctx.drawImage(img, 0, 0, that.width, that.height);
-      }
-
       canvas.addEventListener("mousemove", this.drawing); //鼠标移动事件
       canvas.addEventListener("mousedown", this.penDown); //鼠标按下事件
       canvas.addEventListener("mouseup", this.penUp); //鼠标弹起事件
+    },
+    drawImg(ctx, img) {
+      ctx.drawImage(img, 0, 0, this.width, this.height);
+    },
+    clearCanvas() {
+      let canvas = document.getElementById('canvas'); //获取canvas标签
+      let ctx = canvas.getContext("2d");//创建 context 对象
+      ctx.fillStyle = this.backgroundColor;//画布背景色
+      ctx.fillRect(0, 0, this.width, this.height);//在画布上绘制 width * height 的矩形，从左上角开始 (0,0)
+      const img = new Image();
+      img.src = this.generateBase64Image;
+      const that = this
+      img.onload = function () {
+        that.drawImg(ctx, img);
+      }
     },
     getWidthSelect(width) {
       if (width === this.penWidth) {
@@ -146,17 +168,6 @@ export default {
         return 'btn colorBtn fw'
       }
       return 'btn colorBtn';
-    },
-    clearCanvas() {
-      const canvas = document.getElementById('canvas'); //获取canvas标签
-      const ctx = canvas.getContext("2d");//创建 context 对象
-      ctx.fillStyle = this.backgroundColor;//画布背景色
-      ctx.fillRect(0, 0, this.width, this.height);//在画布上绘制 600x300 的矩形，从左上角开始 (0,0)
-    },
-    setPenWidth(event) {
-      const progress = document.getElementById('progress');
-      this.progressValue = (event.pageX - progress.offsetLeft) / progress.offsetWidth;
-      this.penWidth = 20 * this.progressValue;
     },
     //设置画笔颜色
     setPenColor(color = '') {
