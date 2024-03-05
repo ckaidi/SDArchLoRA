@@ -102,3 +102,12 @@ func Img2Base64(imgUrl string) ImgConfig {
 		Height: h,
 	}
 }
+
+func TransmitGet(url string, w http.ResponseWriter) {
+	response, err := http.Get(url)
+	handle(err)
+	dataByte, err := io.ReadAll(response.Body)
+	handle(err)
+	_, err = w.Write(dataByte)
+	handle(err)
+}

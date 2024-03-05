@@ -17,7 +17,7 @@
            class="col-6 p-1 img-thumbnail text-secondary"
            @click="openFileUpload" style="cursor: pointer;min-height: 200px">
         <input type="file" ref="fileInput" style="display: none" @change="handleFileUpload">
-        <div>
+        <div class="p-1 container">
           点击上传图片
         </div>
       </div>
@@ -58,6 +58,8 @@
   </div>
 </template>
 <script>
+import {sdServer} from "@/sdApi.js";
+
 export default {
   data() {
     return {
@@ -65,13 +67,25 @@ export default {
           "street, cinematic photography, ultra detailed, highly detailed, hyper detail, hyper realistic, " +
           "photorealistic, cinematic, rendering, archdaily, 500px,40mm",
       negativePrompt: "signature, soft, blurry, drawing, sketch, poor quality, ugly, text, type, word, logo, " +
-          "pixelated, low resolution, saturated, high contrast, oversharpened,(cloud),dirt"
+          "pixelated, low resolution, saturated, high contrast, oversharpened,(cloud),dirt",
+      controlNetImg: "",
+      controlNetModels: [],
     }
   },
-  props: {
-    controlNetImg: "",
-  },
   methods: {
+    getControlNetModel() {
+      const that = this
+      const xhr = new XMLHttpRequest()
+      xhr.open('GET', sdServer + '/controlnet/model_list', true);
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          const model = JSON.parse(xhr.responseText)
+        } else {
+          console.log('error')
+        }
+      }
+      xhr.send()
+    },
     openFileUpload() {
       this.$refs.fileInput.click();
     },
@@ -79,8 +93,9 @@ export default {
       const file = event.target.files[0];
       if (file) {
         const reader = new FileReader();
+        const that = this
         reader.onload = (e) => {
-          this.$refs.image.src = e.target.result;
+          that.controlNetImg = e.target.result;
         };
         reader.readAsDataURL(file);
       }

@@ -473,6 +473,10 @@ func ExtraSingleImage(w http.ResponseWriter, r *http.Request) {
 	handle(err)
 }
 
+func ControlNetModels(w http.ResponseWriter, r *http.Request) {
+	TransmitGet(sdServer+"/controlnet/model_list", w)
+}
+
 func CalculateImgWidthHeight(originW int, originH int) (w int, h int) {
 	scale2 := float64(originW*originH) / float64(512*512)
 	scale := math.Pow(scale2, 0.5)
