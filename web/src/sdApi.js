@@ -35,3 +35,17 @@ export function img2img(imgUrl, prompt, negativePrompt, callback) {
     }
     sendRequest(url, callback, data);
 }
+
+export function img2imgWithMask(imgUrl, mask, width, height, prompt, negativePrompt, callback) {
+    const url = sdServer + '/img2img'
+
+    const data = {
+        "prompt": prompt,
+        "negative_prompt": negativePrompt,
+        "img_url": imgUrl.split('?')[0],
+        "mask": mask,
+        "width": width,
+        "height": height
+    }
+    sendRequest(url, callback, data);
+}

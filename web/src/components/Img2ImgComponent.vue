@@ -18,7 +18,7 @@
       <img class="img-thumbnail p-1" v-show="generateBase64Image!==''" :src=generateBase64Image alt="生成图片">
     </div>
   </div>
-  <SDSettingComponent ref="sdSettingComponent" :control-net-img="controlNetImg"/>
+  <SDSettingComponent ref="sdSettingComponent"/>
 </template>
 <script>
 import ScrawlComponent from "@/components/ScrawlComponent.vue";
