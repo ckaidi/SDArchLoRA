@@ -27,10 +27,6 @@ export default {
         {
           path: "#/img2img",
           name: "图生图"
-        },
-        {
-          path: "#/scrawl",
-          name: "涂鸦"
         }
       ]
     }

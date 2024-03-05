@@ -15,7 +15,7 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
           <button type="button" class="btn btn-primary" @click="clearCanvas">清空画布</button>
-          <button type="button" class="btn btn-primary">重新生成</button>
+          <button type="button" class="btn btn-primary" @click="regenerate">重新生成</button>
         </div>
       </div>
     </div>
@@ -56,6 +56,9 @@ export default defineComponent({
   methods: {
     clearCanvas() {
       this.$refs.scrawlComponent.clearCanvas()
+    },
+    regenerate() {
+      this.$refs.scrawlComponent.createImage()
     }
   }
 })

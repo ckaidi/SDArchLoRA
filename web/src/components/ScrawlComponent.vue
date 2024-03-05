@@ -1,6 +1,9 @@
 <template>
-  <canvas class=" border-0" id="canvas" :width="width" :height="height">浏览器不支持canvas
+  <img :src="generateBase64Image" alt="" id="generateImg"/>
+  <canvas v-show="isCanvasShow" class=" border-0" id="canvas" :width="width" :height="height"
+          style="position: absolute">浏览器不支持canvas
     <!-- 如果不支持会显示这段文字 --></canvas>
+  <canvas class="visually-hidden" :width="width" :height="height" id="canvasGenerate"/>
   <div>
     <label for="customRange1" class="form-label">画笔大小</label>
     <input type="range" class="form-range" id="customRange1" min="1" max="15" v-model="penWidth">
@@ -61,6 +64,8 @@ export default {
   },
   data() {
     return {
+      isCanvasShow: false,
+      mask: "",
       modalMarginTop: 0,
       modalMarginLeft: 0,
       penColor: "#ffffff",
@@ -68,7 +73,6 @@ export default {
       penClick: false,
       startAxisX: 0,
       startAxisY: 0,
-      backgroundColor: "#ffffffaa",
       tabList: [{
         label: '背景颜色',
         id: 'back-ground-color'
@@ -91,10 +95,8 @@ export default {
   mounted() {
     const that = this
     const myModalEl = document.getElementById('scrawlModal')
-    myModalEl.addEventListener('show.bs.modal', event => {
-      this.init();
-    })
-    myModalEl.addEventListener('shown.bs.modal', event => {
+    myModalEl.addEventListener('shown.bs.modal', () => {
+      that.init();
       that.modalMarginTop = 0
       const modalDialog = document.getElementById('scrawlModalDialog')
       let style = getComputedStyle(modalDialog)
@@ -109,46 +111,43 @@ export default {
       const modalBody = document.getElementById('scrawlModalBody')
       style = getComputedStyle(modalBody)
       // that.modalMarginTop += Number(style.getPropertyValue('padding-top').replace("px", ""))
+      const bodyWidth = Number(style.getPropertyValue('width').replace("px", ""))
 
       const modalContent = document.getElementById('scrawlModalContent')
       style = getComputedStyle(modalContent)
       const contentHeight = Number(style.getPropertyValue('height').replace("px", ""))
       that.modalMarginTop += (bodyHeight - contentHeight) / 2
 
-      console.log(that.modalMarginTop)
-      console.log(that.modalMarginLeft)
+
+      const generateImg = document.getElementById('generateImg')
+      style = getComputedStyle(generateImg)
+      const imgWidth = Number(style.getPropertyValue('width').replace("px", ""))
+
+      const canvas = document.getElementById('canvas')
+      canvas.style.left = String((bodyWidth - imgWidth) / 2) + 'px'
+      that.isCanvasShow = true
     })
   },
   methods: {
     h,
     //页面初始化
     init() {
-      const that = this
-
       let height = this.height;
       let width = this.width;
       this.penWidth = this.defaultPenSize;
 
       let canvas = document.getElementById('canvas'); //获取canvas标签
       let ctx = canvas.getContext("2d");//创建 context 对象
-      ctx.fillStyle = this.backgroundColor;//画布背景色
+      ctx.fillStyle = 'transparent';//画布背景色
       ctx.fillRect(0, 0, width, height);//在画布上绘制 width * height 的矩形，从左上角开始 (0,0)
-      const img = new Image();
-      img.src = this.generateBase64Image;
-      img.onload = function () {
-        that.drawImg(ctx, img);
-      }
       canvas.addEventListener("mousemove", this.drawing); //鼠标移动事件
       canvas.addEventListener("mousedown", this.penDown); //鼠标按下事件
       canvas.addEventListener("mouseup", this.penUp); //鼠标弹起事件
     },
-    drawImg(ctx, img) {
-      ctx.drawImage(img, 0, 0, this.width, this.height);
-    },
     clearCanvas() {
       let canvas = document.getElementById('canvas'); //获取canvas标签
       let ctx = canvas.getContext("2d");//创建 context 对象
-      ctx.fillStyle = this.backgroundColor;//画布背景色
+      ctx.fillStyle = 'transparent';//画布背景色
       ctx.fillRect(0, 0, this.width, this.height);//在画布上绘制 width * height 的矩形，从左上角开始 (0,0)
       const img = new Image();
       img.src = this.generateBase64Image;
@@ -156,23 +155,6 @@ export default {
       img.onload = function () {
         that.drawImg(ctx, img);
       }
-    },
-    getWidthSelect(width) {
-      if (width === this.penWidth) {
-        return "btn bg penBtn fw"
-      }
-      return "btn bg penBtn"
-    },
-    getColorSelect(color) {
-      if (color === this.penColor) {
-        return 'btn colorBtn fw'
-      }
-      return 'btn colorBtn';
-    },
-    //设置画笔颜色
-    setPenColor(color = '') {
-      if (color === '') this.penColor = this.backgroundColor;
-      else this.penColor = color;
     },
     penDown(event) {
       this.penClick = true;
@@ -203,10 +185,16 @@ export default {
     },
     createImage() {
       console.log('-------');
-      const canvas = document.getElementById('canvas'); //获取canvas标签
+      // 获取原始canvas元素和上下文
+      const originalCanvas = document.getElementById('canvas');
+      const canvas = document.getElementById('canvasGenerate'); //获取canvas标签
+      let ctx = canvas.getContext("2d");//创建 context 对象
       //将画板保存为图片格式的函数
       // console.log('=====',img_png_src);//data:image/png;base64,iVBOR.....
-      document.getElementById("image_png").src = canvas.toDataURL("image/png");
+      ctx.fillStyle = '#000000';//画布背景色
+      ctx.fillRect(0, 0, this.width, this.height);//在画布上绘制 width * height 的矩形，从左上角开始 (0,0)
+      ctx.drawImage(originalCanvas, 0, 0);
+      this.mask = canvas.toDataURL("image/png")
     }
   }
 }
@@ -214,32 +202,9 @@ export default {
 
 <style>
 
-#canvas-broad {
-  margin: 0 auto;
-  /*text-align: center;*/
-}
-
 #canvas {
   border: 2px solid #ff6700;
   cursor: crosshair;
-}
-
-#image_png {
-  width: 300px;
-  height: 150px;
-  border: 2px solid #ff6700;
-  display: block;
-  margin: 10px auto;
-}
-
-.section {
-  margin-top: 10px;
-}
-
-.info {
-  color: #f0f;
-  font-size: 14px;
-  line-height: 40px;
 }
 
 </style>
