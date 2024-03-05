@@ -51,13 +51,15 @@ export default defineComponent({
       img2imgWithMask(this.generateBase64Image, mask, this.generateImgWidth, this.generateImgHeight, prompt, negativePrompt, function (data) {
         const images = data['images']
         if (images !== null && images !== undefined) {
-          if (images.length > 0)
+          if (images.length > 0) {
             that.generateBase64Image = "data:image/png;base64," + images[0]
-        }
-        const parameters = data['parameters']
-        if (parameters !== null && parameters !== undefined) {
-          that.generateImgWidth = parameters['width']
-          that.generateImgHeight = parameters['height']
+            const image = new Image()
+            image.onload = function () {
+              that.generateImgWidth = image.width
+              that.generateImgHeight = image.height
+            }
+            image.src = that.generateBase64Image
+          }
         }
       }, mask)
     }

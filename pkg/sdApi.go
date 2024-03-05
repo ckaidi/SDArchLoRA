@@ -474,7 +474,7 @@ func ExtraSingleImage(w http.ResponseWriter, r *http.Request) {
 }
 
 func CalculateImgWidthHeight(originW int, originH int) (w int, h int) {
-	scale2 := originW * originH / 512 / 512
-	scale := math.Pow(float64(scale2), 0.5)
+	scale2 := float64(originW*originH) / float64(512*512)
+	scale := math.Pow(scale2, 0.5)
 	return int(float64(originW) / scale), int(float64(originH) / scale)
 }

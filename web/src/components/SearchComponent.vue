@@ -27,7 +27,7 @@ export default {
         ws.onmessage = function (event) {
           // 接收到服务器发送的数据，打印信息
           console.log("WebSocket 接收到数据：", event.data);
-          that.$emit('transfer', event.data)
+          that.onReceiveImg(event.data)
         };
 
         // 注册 onclose 事件的回调函数
@@ -43,6 +43,9 @@ export default {
         };
       }
     }
+  },
+  props: {
+    onReceiveImg: null
   },
   data() {
     return {

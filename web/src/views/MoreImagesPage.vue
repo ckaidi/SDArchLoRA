@@ -1,6 +1,6 @@
 <template>
   <NavigationComponent :activate-tab="currentTab"/>
-  <SearchComponent @transfer="addImages"/>
+  <SearchComponent :on-receive-img="addImages"/>
   <div style="min-height: 100%; width:100%">
     <Waterfall
         :list="list"
@@ -107,6 +107,8 @@ export default {
       item.show = false
     },
     addImages(imageText) {
+      if (imageText === 'end')
+        return
       const image = JSON.parse(imageText)
       this.list.push({
         src: {
