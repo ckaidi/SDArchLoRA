@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/archdaily", pkg.GetArchdailyImagesRoute)
+	http.HandleFunc("/archdaily", pkg.Cors(pkg.GetArchdailyImagesRoute))
 	http.HandleFunc("/txt2img", pkg.Cors(pkg.Txt2img))
 	http.HandleFunc("/img2img", pkg.Cors(pkg.Img2img))
 	http.HandleFunc("/extra", pkg.Cors(pkg.ExtraSingleImage))

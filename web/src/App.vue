@@ -8,9 +8,15 @@
 </template>
 <script>
 import MoreImagesPage from "@/views/MoreImagesPage.vue";
+import {OneDay} from "@/main.js";
 
 export default {
-  components: {MoreImagesPage}
+  components: {MoreImagesPage},
+  created() {
+    this.$cookies.config(OneDay, '/')
+    this.$cookies.set('page', 1, OneDay, '/')
+    this.$cookies.set('projectCount', 0, OneDay, '/')
+  }
 }
 </script>
 

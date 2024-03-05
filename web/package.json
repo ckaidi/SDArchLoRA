@@ -16,6 +16,7 @@
     "jquery": "^3.7.1",
     "popper.js": "^1.16.1",
     "vue": "^3.4.15",
+    "vue-cookies": "^1.8.3",
     "vue-router": "^4.2.4",
     "vue-waterfall-plugin-next": "^2.3.1"
   },

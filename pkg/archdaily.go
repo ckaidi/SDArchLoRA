@@ -90,16 +90,16 @@ func GetArchdailyImagesRoute(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	handle(err)
 	defer func(conn *websocket.Conn) {
-		err := conn.Close()
+		err = conn.Close()
 		handle(err)
 	}(conn)
-	getImagesUrl(conn, keyword, page)
+	getImagesUrl(r, conn, keyword, page)
 	// 发送一个结束标志给客户端，表示数据发送完毕
 	err = conn.WriteMessage(websocket.TextMessage, []byte("end"))
 	handle(err)
 }
 
-func getImagesUrl(conn *websocket.Conn, key string, page int) {
+func getImagesUrl(r *http.Request, conn *websocket.Conn, key string, page int) {
 	Get(getSearchUrl(key, page), func(response *http.Response) {
 		defer func(Body io.ReadCloser) {
 			err := Body.Close()
@@ -111,17 +111,27 @@ func getImagesUrl(conn *websocket.Conn, key string, page int) {
 		var searchResult SearchResult
 		err = json.Unmarshal([]byte(text), &searchResult)
 		handle(err)
-		count := 0 // 将 HTTP 连接升级为 WebSocket 连接
-		for _, project := range searchResult.Results {
-			if count > 50 {
+
+		startProjectCount, err := strconv.Atoi(r.URL.Query().Get("projectCount"))
+		handle(err)
+		allCount := 0
+		// 将 HTTP 连接升级为 WebSocket 连接
+		for index, project := range searchResult.Results {
+			if index < startProjectCount {
+				continue
+			}
+			if allCount > 50 {
+				err = conn.WriteMessage(websocket.TextMessage, []byte("chenkaidiConfig/"+strconv.Itoa(page)+"/"+strconv.Itoa(index)))
+				handle(err)
 				return
 			}
-			analyseProject(conn, project, &count)
+			analyseProject(conn, project, &allCount)
 		}
+		getImagesUrl(r, conn, key, page+1)
 	})
 }
 
-func analyseProject(conn *websocket.Conn, project ResultDetail, count *int) {
+func analyseProject(conn *websocket.Conn, project ResultDetail, allCount *int) {
 	Get(project.Url, func(response *http.Response) {
 		defer func(Body io.ReadCloser) {
 			err := Body.Close()
@@ -141,7 +151,7 @@ func analyseProject(conn *websocket.Conn, project ResultDetail, count *int) {
 					Url:  imageUrl,
 				})
 				handle(err)
-				*count += 1
+				*allCount += 1
 			}
 		})
 	})

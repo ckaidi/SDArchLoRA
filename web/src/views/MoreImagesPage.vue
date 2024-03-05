@@ -1,6 +1,6 @@
 <template>
   <NavigationComponent :activate-tab="currentTab"/>
-  <SearchComponent :on-receive-img="addImages"/>
+  <SearchComponent ref="searchComponent" :on-receive-img="addImages"/>
   <div style="min-height: 100%; width:100%">
     <Waterfall
         :list="list"
@@ -35,7 +35,7 @@
         </div>
       </template>
     </Waterfall>
-    <button class="btn btn-primary mb-4">
+    <button v-show="list.length>0" class="btn btn-primary mb-4" @click="showMore">
       加载更多
     </button>
   </div>
@@ -46,10 +46,41 @@ import SearchComponent from "@/components/SearchComponent.vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
 import Img2ImgComponent from "@/components/Img2ImgComponent.vue";
 import {LazyImg, Waterfall} from "vue-waterfall-plugin-next";
+import {continueSearchArchDaily, OneDay} from "@/main.js";
 
 
 export default {
   components: {NavigationComponent, SearchComponent, LazyImg, Waterfall, Img2ImgComponent},
+
+  methods: {
+    showMore() {
+      this.$refs.searchComponent.showMore()
+    },
+    mouseover(item) {
+      item.show = true
+      this.currentSelectUrl = item.src.original.replace("medium_jpg", "large_jpg");
+    },
+    mouseleave(item) {
+      item.show = false
+    },
+    addImages(imageText) {
+      if (imageText === 'end')
+        return
+      if (imageText.startsWith('chenkaidiConfig')) {
+        const texts = imageText.split('/')
+        this.$cookies.set('page', Number(texts[1]), OneDay, '/')
+        this.$cookies.set('projectCount', Number(texts[2]), OneDay, '/')
+        return
+      }
+      const image = JSON.parse(imageText)
+      this.list.push({
+        src: {
+          original: image.url
+        },
+        show: false
+      })
+    }
+  },
   data() {
     return {
       currentTab: "搜图",
@@ -98,26 +129,6 @@ export default {
       }
     }
   },
-  methods: {
-    mouseover(item) {
-      item.show = true
-      this.currentSelectUrl = item.src.original.replace("medium_jpg", "large_jpg");
-    },
-    mouseleave(item) {
-      item.show = false
-    },
-    addImages(imageText) {
-      if (imageText === 'end')
-        return
-      const image = JSON.parse(imageText)
-      this.list.push({
-        src: {
-          original: image.url
-        },
-        show: false
-      })
-    }
-  }
 }
 </script>
 <style scoped>
