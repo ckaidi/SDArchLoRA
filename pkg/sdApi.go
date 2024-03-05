@@ -16,6 +16,9 @@ type Img2imgRequestJson struct {
 	ImgUrl         string `json:"img_url"`
 	Prompt         string `json:"prompt"`
 	NegativePrompt string `json:"negative_prompt"`
+	Mask           string `json:"mask"`
+	Width          int    `json:"width"`
+	Height         int    `json:"height"`
 }
 
 type ExtraSingleRequestJson struct {
@@ -125,7 +128,7 @@ type Img2imgJson struct {
 	InitImages []string `json:"init_images"`
 	//ResizeMode             int           `json:"resize_mode"`
 	//ImageCfgScale          int           `json:"image_cfg_scale"`
-	//Mask                   string        `json:"mask"`
+	Mask string `json:"mask"`
 	//MaskBlurX              int           `json:"mask_blur_x"`
 	//MaskBlurY              int           `json:"mask_blur_y"`
 	//MaskBlur               int           `json:"mask_blur"`
@@ -289,7 +292,7 @@ func defaultImg2imgJson() Img2imgJson {
 		//InitImages:                        nil,
 		//ResizeMode:                        0,
 		//ImageCfgScale:                     0,
-		//Mask:                              "",
+		Mask: "",
 		//MaskBlurX:                         0,
 		//MaskBlurY:                         0,
 		//MaskBlur:                          0,
@@ -387,7 +390,17 @@ func Img2img(w http.ResponseWriter, r *http.Request) {
 	img2ImgJson := new(Img2imgRequestJson)
 	err = json.Unmarshal(dataByte, img2ImgJson)
 	handle(err)
-	imgConfig := Img2Base64(img2ImgJson.ImgUrl)
+	var imgConfig ImgConfig
+	// 是否是base64Img
+	if strings.HasPrefix(img2ImgJson.ImgUrl, "data:image") {
+		imgConfig = ImgConfig{
+			Base64: img2ImgJson.ImgUrl,
+			Width:  img2ImgJson.Width,
+			Height: img2ImgJson.Height,
+		}
+	} else {
+		imgConfig = Img2Base64(img2ImgJson.ImgUrl)
+	}
 	initImg := make([]string, 0)
 	initImg = append(initImg, imgConfig.Base64)
 	img2img := defaultImg2imgJson()
@@ -396,6 +409,9 @@ func Img2img(w http.ResponseWriter, r *http.Request) {
 	img2img.InitImages = initImg
 	img2img.Prompt = img2ImgJson.Prompt
 	img2img.NegativePrompt = img2ImgJson.NegativePrompt
+	if img2ImgJson.Mask != "" {
+		img2img.Mask = img2ImgJson.Mask
+	}
 	jsonData, err := json.Marshal(img2img)
 	handle(err)
 	reader := strings.NewReader(string(jsonData))
@@ -407,6 +423,7 @@ func Img2img(w http.ResponseWriter, r *http.Request) {
 	handle(err)
 }
 
+// ExtraSingleImage 放大单一图片
 func ExtraSingleImage(w http.ResponseWriter, r *http.Request) {
 	// 检查请求方法是否为 POST
 	if r.Method != "POST" {

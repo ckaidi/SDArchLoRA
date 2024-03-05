@@ -53,10 +53,6 @@ export default {
       type: Number,
       default: -1
     },
-    defaultPenSize: {
-      type: Number,
-      default: 4
-    },
     toolsTabList: {
       type: Boolean,
       default: false
@@ -65,7 +61,6 @@ export default {
   data() {
     return {
       isCanvasShow: false,
-      mask: "",
       modalMarginTop: 0,
       modalMarginLeft: 0,
       penColor: "#ffffff",
@@ -134,12 +129,13 @@ export default {
     init() {
       let height = this.height;
       let width = this.width;
-      this.penWidth = this.defaultPenSize;
 
       let canvas = document.getElementById('canvas'); //获取canvas标签
       let ctx = canvas.getContext("2d");//创建 context 对象
       ctx.fillStyle = 'transparent';//画布背景色
       ctx.fillRect(0, 0, width, height);//在画布上绘制 width * height 的矩形，从左上角开始 (0,0)
+      ctx.fillStyle = 'transparent';//画布背景色
+      ctx.clearRect(0, 0, this.width, this.height);//在画布上绘制 width * height 的矩形，从左上角开始 (0,0)
       canvas.addEventListener("mousemove", this.drawing); //鼠标移动事件
       canvas.addEventListener("mousedown", this.penDown); //鼠标按下事件
       canvas.addEventListener("mouseup", this.penUp); //鼠标弹起事件
@@ -148,13 +144,7 @@ export default {
       let canvas = document.getElementById('canvas'); //获取canvas标签
       let ctx = canvas.getContext("2d");//创建 context 对象
       ctx.fillStyle = 'transparent';//画布背景色
-      ctx.fillRect(0, 0, this.width, this.height);//在画布上绘制 width * height 的矩形，从左上角开始 (0,0)
-      const img = new Image();
-      img.src = this.generateBase64Image;
-      const that = this
-      img.onload = function () {
-        that.drawImg(ctx, img);
-      }
+      ctx.clearRect(0, 0, this.width, this.height);//在画布上绘制 width * height 的矩形，从左上角开始 (0,0)
     },
     penDown(event) {
       this.penClick = true;
@@ -194,7 +184,7 @@ export default {
       ctx.fillStyle = '#000000';//画布背景色
       ctx.fillRect(0, 0, this.width, this.height);//在画布上绘制 width * height 的矩形，从左上角开始 (0,0)
       ctx.drawImage(originalCanvas, 0, 0);
-      this.mask = canvas.toDataURL("image/png")
+      return canvas.toDataURL("image/png")
     }
   }
 }

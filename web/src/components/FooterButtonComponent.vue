@@ -15,7 +15,7 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
           <button type="button" class="btn btn-primary" @click="clearCanvas">清空画布</button>
-          <button type="button" class="btn btn-primary" @click="regenerate">重新生成</button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @click="regenerate">重新生成</button>
         </div>
       </div>
     </div>
@@ -51,14 +51,16 @@ export default defineComponent({
       type: Number,
       default: 0,
     },
-    generateFunc: null
+    generateFunc: null,
+    regenerateFunc: null,
   },
   methods: {
     clearCanvas() {
       this.$refs.scrawlComponent.clearCanvas()
     },
     regenerate() {
-      this.$refs.scrawlComponent.createImage()
+      const base64Mask = this.$refs.scrawlComponent.createImage()
+      this.regenerateFunc(base64Mask)
     }
   }
 })
