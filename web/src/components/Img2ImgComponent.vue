@@ -1,14 +1,14 @@
 <template>
   <div class="container-fluid row" style="min-height: 200px">
     <div class="col-6">
-      <img v-show="!isUpload" :src=selectImg
-           class="img-thumbnail p-1" alt="原始图像">
-      <div v-show="selectImg===''" class="p-1 container img-thumbnail text-secondary"
+      <div class="container text-secondary"
            @click="openFileUpload" style="cursor: pointer">
         <input type="file" ref="fileInput" style="display: none" @change="handleFileUpload">
-        <div>
+        <div v-show="selectImg===''" class="p-1 container img-thumbnail">
           点击上传原始图像
         </div>
+        <img v-show="selectImg!==''" :src=selectImg
+             class="img-thumbnail p-1" alt="原始图像">
       </div>
     </div>
     <div class="col-6">
@@ -31,13 +31,12 @@ export default {
     return {
       dw: 300,
       controlNetImg: "https://image-static.segmentfault.com/403/138/4031383455-530adf1833207707",
-      selectImg: "",
     }
   },
   props: {
-    isUpload: false,
     selectImg: "",
     generateBase64Image: "",
+    uploadCallBack: null,
   },
   methods: {
     openFileUpload() {
@@ -47,8 +46,9 @@ export default {
       const file = event.target.files[0];
       if (file) {
         const reader = new FileReader();
+        const that = this
         reader.onload = (e) => {
-          this.$refs.image.src = e.target.result;
+          that.uploadCallBack(e.target.result)
         };
         reader.readAsDataURL(file);
       }

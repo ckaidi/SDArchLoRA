@@ -13,7 +13,7 @@ import {defineComponent} from "vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
 import Txt2ImgComponent from "@/components/Txt2ImgComponent.vue";
 import FooterButtonComponent from "@/components/FooterButtonComponent.vue"
-import {img2img, img2imgWithMask, txt2img} from "@/sdApi.js";
+import {img2imgWithMask, txt2img} from "@/sdApi.js";
 import Img2ImgComponent from "@/components/Img2ImgComponent.vue";
 
 export default defineComponent({

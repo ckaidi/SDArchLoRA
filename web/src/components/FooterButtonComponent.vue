@@ -25,7 +25,7 @@
     <button :disabled="generateImg===''" class="btn btn-primary m-2" data-bs-toggle="modal"
             data-bs-target="#scrawlModal">局部重绘
     </button>
-    <button class="btn btn-primary m-2" @click="generateFunc">生成</button>
+    <button class="btn btn-primary m-2" @click="generate">生成</button>
   </div>
 </template>
 <script>
@@ -57,6 +57,9 @@ export default defineComponent({
   methods: {
     clearCanvas() {
       this.$refs.scrawlComponent.clearCanvas()
+    },
+    generate() {
+      this.generateFunc()
     },
     regenerate() {
       const base64Mask = this.$refs.scrawlComponent.createImage()

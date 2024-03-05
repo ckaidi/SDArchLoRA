@@ -3,6 +3,7 @@ package pkg
 import (
 	"encoding/json"
 	"io"
+	"math"
 	"net/http"
 	"strings"
 )
@@ -128,7 +129,7 @@ type Img2imgJson struct {
 	InitImages []string `json:"init_images"`
 	//ResizeMode             int           `json:"resize_mode"`
 	//ImageCfgScale          int           `json:"image_cfg_scale"`
-	Mask string `json:"mask"`
+	//Mask string `json:"mask"`
 	//MaskBlurX              int           `json:"mask_blur_x"`
 	//MaskBlurY              int           `json:"mask_blur_y"`
 	//MaskBlur               int           `json:"mask_blur"`
@@ -149,6 +150,11 @@ type Img2imgJson struct {
 	AlwaysonScripts struct {
 	} `json:"alwayson_scripts"`
 	//Infotext string `json:"infotext"`
+}
+
+type Img2imgWithMaskJson struct {
+	Img2imgJson
+	Mask string `json:"mask"`
 }
 
 type ExtraSingleJson struct {
@@ -292,7 +298,7 @@ func defaultImg2imgJson() Img2imgJson {
 		//InitImages:                        nil,
 		//ResizeMode:                        0,
 		//ImageCfgScale:                     0,
-		Mask: "",
+		//Mask: "null",
 		//MaskBlurX:                         0,
 		//MaskBlurY:                         0,
 		//MaskBlur:                          0,
@@ -312,6 +318,13 @@ func defaultImg2imgJson() Img2imgJson {
 		//SaveImages:                        false,
 		//AlwaysonScripts:                   struct{}{},
 		//Infotext:                          "",
+	}
+}
+
+func defaultImg2imgWithMaskJson() Img2imgWithMaskJson {
+	return Img2imgWithMaskJson{
+		Img2imgJson: defaultImg2imgJson(),
+		Mask:        "",
 	}
 }
 
@@ -403,14 +416,24 @@ func Img2img(w http.ResponseWriter, r *http.Request) {
 	}
 	initImg := make([]string, 0)
 	initImg = append(initImg, imgConfig.Base64)
-	img2img := defaultImg2imgJson()
-	img2img.Height = imgConfig.Height
-	img2img.Width = imgConfig.Width
-	img2img.InitImages = initImg
-	img2img.Prompt = img2ImgJson.Prompt
-	img2img.NegativePrompt = img2ImgJson.NegativePrompt
-	if img2ImgJson.Mask != "" {
-		img2img.Mask = img2ImgJson.Mask
+	var img2img interface{}
+	if img2ImgJson.Mask == "" {
+		temp := defaultImg2imgJson()
+		temp.Height = imgConfig.Height
+		temp.Width = imgConfig.Width
+		temp.InitImages = initImg
+		temp.Prompt = img2ImgJson.Prompt
+		temp.NegativePrompt = img2ImgJson.NegativePrompt
+		img2img = temp
+	} else {
+		temp := defaultImg2imgWithMaskJson()
+		temp.Height = imgConfig.Height
+		temp.Width = imgConfig.Width
+		temp.InitImages = initImg
+		temp.Prompt = img2ImgJson.Prompt
+		temp.NegativePrompt = img2ImgJson.NegativePrompt
+		temp.Mask = img2ImgJson.Mask
+		img2img = temp
 	}
 	jsonData, err := json.Marshal(img2img)
 	handle(err)
@@ -448,4 +471,10 @@ func ExtraSingleImage(w http.ResponseWriter, r *http.Request) {
 	handle(err)
 	_, err = w.Write(dataByte)
 	handle(err)
+}
+
+func CalculateImgWidthHeight(originW int, originH int) (w int, h int) {
+	scale2 := originW * originH / 512 / 512
+	scale := math.Pow(float64(scale2), 0.5)
+	return int(float64(originW) / scale), int(float64(originH) / scale)
 }

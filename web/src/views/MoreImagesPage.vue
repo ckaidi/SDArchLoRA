@@ -1,28 +1,5 @@
 <template>
   <NavigationComponent :activate-tab="currentTab"/>
-  <div class="modal modal-xl fade" id="exampleModal" tabindex="-1"
-       aria-labelledby="exampleModalLabel"
-       aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h1 class="modal-title fs-5" id="exampleModalLabel">AI生成</h1>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <Img2ImgComponent :is-upload="false" :select-img="currentSelectUrl"
-                            :generate-base64-image="generateBase64Image"
-                            ref="img2imgComponent"/>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-          <button type="button" class="btn btn-primary" @click="sdGenerate">局部重绘</button>
-          <button type="button" class="btn btn-primary" @click="sdGenerate">生成</button>
-          <button type="button" class="btn btn-primary">下载图片</button>
-        </div>
-      </div>
-    </div>
-  </div>
   <SearchComponent @transfer="addImages"/>
   <div style="min-height: 100%; width:100%">
     <Waterfall
@@ -48,9 +25,10 @@
             <div class="position-absolute top-0 left-0 d-flex justify-content-center align-items-center
                  w-100 h-100 text-white fs-5 bg-body-secondary opacity-75"
                  :class="{'cardButtonShow':item.show,'cardButtonHide':!item.show}">
-              <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+              <a type="button" class="btn btn-secondary"
+                 :href="'/#/img2img?' + 'imgUrl=' + this.currentSelectUrl">
                 AI生图
-              </button>
+              </a>
             </div>
             <img :src=url :alt="item.name" class="card-img-top">
           </div>
@@ -68,7 +46,7 @@ import SearchComponent from "@/components/SearchComponent.vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
 import Img2ImgComponent from "@/components/Img2ImgComponent.vue";
 import {LazyImg, Waterfall} from "vue-waterfall-plugin-next";
-import {img2img} from "@/sdApi.js";
+
 
 export default {
   components: {NavigationComponent, SearchComponent, LazyImg, Waterfall, Img2ImgComponent},
@@ -121,23 +99,6 @@ export default {
     }
   },
   methods: {
-    sdGenerate() {
-      const negativePrompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.negativePrompt
-      const prompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.prompt
-      const that = this
-      img2img(this.currentSelectUrl, prompt, negativePrompt, function (data) {
-        const images = data['images']
-        if (images !== null && images !== undefined) {
-          if (images.length > 0)
-            that.generateBase64Image = "data:image/png;base64," + images[0]
-        }
-        const parameters = data['parameters']
-        if (parameters !== null && parameters !== undefined) {
-          that.generateImgWidth = parameters['width']
-          that.generateImgHeight = parameters['height']
-        }
-      })
-    },
     mouseover(item) {
       item.show = true
       this.currentSelectUrl = item.src.original.replace("medium_jpg", "large_jpg");

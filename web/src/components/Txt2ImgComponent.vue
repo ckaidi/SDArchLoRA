@@ -16,7 +16,6 @@ import SDSettingComponent from "@/components/SDSettingComponent.vue";
 export default {
   components: {SDSettingComponent},
   props: {
-    isUpload: false,
     selectImg: "",
     generateBase64Image: "",
     controlNetImg: "",
