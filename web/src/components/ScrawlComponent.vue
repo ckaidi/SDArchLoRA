@@ -6,7 +6,7 @@
   <canvas class="visually-hidden" :width="width" :height="height" id="canvasGenerate"/>
   <div>
     <label for="customRange1" class="form-label">画笔大小</label>
-    <input type="range" class="form-range" id="customRange1" min="1" max="15" v-model="penWidth">
+    <input type="range" class="form-range" id="customRange1" min="1" max="20" v-model="penWidth">
   </div>
   <!--    <template v-if="!toolsTabList">-->
   <!--      <div class="section">-->
@@ -69,7 +69,7 @@ export default {
       modalMarginTop: 0,
       modalMarginLeft: 0,
       penColor: "#ffffff",
-      penWidth: 4,
+      penWidth: 10,
       penClick: false,
       startAxisX: 0,
       startAxisY: 0,
