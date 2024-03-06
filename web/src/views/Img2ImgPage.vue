@@ -13,7 +13,7 @@ import {defineComponent} from "vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
 import Img2ImgComponent from "@/components/Img2ImgComponent.vue";
 import FooterButtonComponent from "@/components/FooterButtonComponent.vue"
-import {img2img} from "@/sdApi.js";
+import {img2img, sdServer} from "@/sdApi.js";
 
 export default defineComponent({
   components: {FooterButtonComponent, NavigationComponent, Img2ImgComponent},
@@ -21,6 +21,8 @@ export default defineComponent({
     return {
       currentTab: "图生图",
       selectImg: "",
+      selectImgWidth: 0,
+      selectHeight: 0,
       generateBase64Image: "",
       generateImgWidth: 0,
       generateImgHeight: 0,
@@ -28,8 +30,23 @@ export default defineComponent({
   },
   created() {
     const temp = this.$route.query.imgUrl
-    if (temp !== undefined)
-      this.selectImg = temp
+    if (temp !== undefined) {
+      const xhr = new XMLHttpRequest();
+      const that = this
+      xhr.open('POST', sdServer + '/img2base64', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          const result = JSON.parse(xhr.responseText)
+          that.selectImg = "" + result['Base64']
+          that.selectHeight = Number(result['Height'])
+          that.selectImgWidth = Number(result['Width'])
+        } else {
+          alert('网络错误，请重试')
+        }
+      };
+      xhr.send(temp);
+    }
   },
   methods: {
     uploadCallback(img) {
@@ -60,7 +77,6 @@ export default defineComponent({
               guidance_start: 0,
               guidance_end: 1,
               control_mode: 0,
-              image: "null"
             }
           ]
         }
@@ -92,7 +108,7 @@ export default defineComponent({
     sdGenerate() {
       if (this.selectImg === '' || this.selectImg === null || this.selectImg === undefined) {
         alert('请上传图片')
-      }else{
+      } else {
         this.generateCore(this.selectImg, {})
       }
     },

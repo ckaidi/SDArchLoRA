@@ -16,14 +16,19 @@ function sendRequest(url, callback, data) {
 }
 
 export function txt2img(data, callback) {
-    const url = sdServer + '/txt2imgT'
+    const url = sdServer + '/txt2img'
     sendRequest(url, callback, data);
 }
 
-export function img2img(imgUrl, data, callback) {
+export function txt2imgRedraw(data, callback) {
     const url = sdServer + '/img2img'
-    data.img_url = imgUrl.split('?')[0]
-    if (imgUrl.startsWith('data:image/')) {
+    sendRequest(url, callback, data);
+}
+
+export function img2img(imgBase64, data, callback) {
+    const url = sdServer + '/img2img'
+    data.init_images = [imgBase64]
+    if (imgBase64.startsWith('data:image/')) {
         const image = new Image();
         image.onload = () => {
             const scale2 = image.width * image.height / 512 / 512
@@ -32,8 +37,6 @@ export function img2img(imgUrl, data, callback) {
             data.height = parseInt((image.height / scale).toString())
             sendRequest(url, callback, data);
         };
-        image.src = imgUrl;
-    } else {
-        sendRequest(url, callback, data);
+        image.src = imgBase64;
     }
 }

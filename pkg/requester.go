@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	_ "golang.org/x/image/bmp" // Import BMP format
 	"image"
@@ -79,8 +80,24 @@ func fetch(webUrl string, method string, callback func(*http.Response)) {
 	}
 }
 
-// Img2Base64 下载图片
-func Img2Base64(imgUrl string) ImgConfig {
+func Img2Base64(w http.ResponseWriter, r *http.Request) {
+	// 检查请求方法是否为 POST
+	if r.Method != "POST" {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	dataByte, err := io.ReadAll(r.Body)
+	handle(err)
+	imgConfig := img2Base64Internal(string(dataByte))
+	dataByte, err = json.Marshal(imgConfig)
+	handle(err)
+	_, err = w.Write(dataByte)
+	handle(err)
+}
+
+// Img2Base64Internal 下载图片
+func img2Base64Internal(imgUrl string) ImgConfig {
 	response, err := http.Get(imgUrl)
 	handle(err)
 	defer func(Body io.ReadCloser) {
@@ -98,7 +115,7 @@ func Img2Base64(imgUrl string) ImgConfig {
 	base64Image := base64.StdEncoding.EncodeToString(imageData)
 	w, h := CalculateImgWidthHeight(config.Width, config.Height)
 	return ImgConfig{
-		Base64: base64Image,
+		Base64: "data:image/png;base64," + base64Image,
 		Width:  w,
 		Height: h,
 	}
