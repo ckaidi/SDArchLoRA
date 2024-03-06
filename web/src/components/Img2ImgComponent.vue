@@ -15,10 +15,11 @@
       <div v-show="generateBase64Image===''" class="p-1 container img-thumbnail text-secondary">
         图片生成区
       </div>
-      <img id="img2imgGenerateImg" class="img-thumbnail p-1" v-show="generateBase64Image!==''" :src=generateBase64Image alt="生成图片">
+      <img id="img2imgGenerateImg" class="img-thumbnail p-1" v-show="generateBase64Image!==''" :src=generateBase64Image
+           alt="生成图片">
     </div>
   </div>
-  <SDSettingComponent ref="sdSettingComponent"/>
+  <SDSettingComponent ref="sdSettingComponent" :is-control-net-img-use="false"/>
 </template>
 <script>
 import ScrawlComponent from "@/components/ScrawlComponent.vue";

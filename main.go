@@ -6,7 +6,8 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/controlnet", pkg.Cors(pkg.ControlNetModels))
+	http.HandleFunc("/controlnet/models", pkg.Cors(pkg.ControlNetModels))
+	http.HandleFunc("/controlnet/types", pkg.Cors(pkg.ControlNetTypes))
 	http.HandleFunc("/archdaily", pkg.Cors(pkg.GetArchdailyImagesRoute))
 	http.HandleFunc("/txt2img", pkg.Cors(pkg.Txt2img))
 	http.HandleFunc("/img2img", pkg.Cors(pkg.Img2img))

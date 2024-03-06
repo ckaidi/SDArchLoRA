@@ -8,7 +8,7 @@
       <img class="img-thumbnail p-1" v-show="generateBase64Image!==''" :src=generateBase64Image alt="生成图片">
     </div>
   </div>
-  <SDSettingComponent ref="sdSettingComponent"/>
+  <SDSettingComponent ref="sdSettingComponent" :is-control-net-img-use="true"/>
 </template>
 <script>
 import SDSettingComponent from "@/components/SDSettingComponent.vue";

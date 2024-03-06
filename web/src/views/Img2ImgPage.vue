@@ -36,10 +36,40 @@ export default defineComponent({
       this.selectImg = img
     },
     sdGenerate() {
-      const negativePrompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.negativePrompt
       const prompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.prompt
+      const negativePrompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.negativePrompt
       const that = this
-      img2img(this.selectImg, prompt, negativePrompt, function (data) {
+      const data = {
+        prompt: prompt,
+        negative_prompt: negativePrompt,
+      }
+      const isControlNetEnable = this.$refs.img2imgComponent.$refs.sdSettingComponent.isControlNetEnable
+      if (isControlNetEnable) {
+        const selectControlType = this.$refs.img2imgComponent.$refs.sdSettingComponent.selectControlType
+        const weight = this.$refs.img2imgComponent.$refs.sdSettingComponent.weight
+        const selectControlModel = this.$refs.img2imgComponent.$refs.sdSettingComponent.getSelectControlModel()
+        const controlnet = {
+          args: [
+            {
+              enable: this.$refs.img2imgComponent.$refs.sdSettingComponent.isControlNetEnable,
+              weight: weight,
+              module: selectControlType,
+              model: selectControlModel.path,
+              resize_mode: 0,
+              processor_res: 512,
+              threshold_a: 100,
+              threshold_b: 200,
+              guidance_start: 0,
+              guidance_end: 1,
+              control_mode: 0,
+            }
+          ]
+        }
+        data.alwayson_scripts = {
+          controlnet: controlnet
+        }
+      }
+      img2img(this.selectImg, data, function (data) {
         const images = data['images']
         if (images !== null && images !== undefined) {
           if (images.length > 0) {
@@ -53,6 +83,9 @@ export default defineComponent({
           }
         }
       })
+    },
+    sdGenerateOrigin() {
+
     },
     sdRegenerate(mask) {
       const negativePrompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.negativePrompt

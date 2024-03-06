@@ -14,12 +14,13 @@ type Txt2imgRequestJson struct {
 }
 
 type Img2imgRequestJson struct {
-	ImgUrl         string `json:"img_url"`
-	Prompt         string `json:"prompt"`
-	NegativePrompt string `json:"negative_prompt"`
-	Mask           string `json:"mask"`
-	Width          int    `json:"width"`
-	Height         int    `json:"height"`
+	ImgUrl          string          `json:"img_url"`
+	Prompt          string          `json:"prompt"`
+	NegativePrompt  string          `json:"negative_prompt"`
+	Mask            string          `json:"mask"`
+	Width           int             `json:"width"`
+	Height          int             `json:"height"`
+	AlwaysonScripts AlwaysonScripts `json:"alwayson_scripts"`
 }
 
 type ExtraSingleRequestJson struct {
@@ -28,7 +29,7 @@ type ExtraSingleRequestJson struct {
 }
 
 type AlwaysonScripts struct {
-	Controlnet ControlNetJson `json:"Controlnet"`
+	Controlnet ControlNetJson `json:"controlnet"`
 }
 
 type Txt2imgJson struct {
@@ -147,8 +148,7 @@ type Img2imgJson struct {
 	//ScriptArgs             []interface{} `json:"script_args"`
 	//SendImages             bool          `json:"send_images"`
 	//SaveImages             bool          `json:"save_images"`
-	AlwaysonScripts struct {
-	} `json:"alwayson_scripts"`
+	AlwaysonScripts AlwaysonScripts `json:"alwayson_scripts"`
 	//Infotext string `json:"infotext"`
 }
 
@@ -175,20 +175,20 @@ type ExtraSingleJson struct {
 }
 
 type ControlNetArgs struct {
-	Enabled       bool        `json:"enabled"`
-	Module        string      `json:"module"`
-	Model         string      `json:"model"`
-	Weight        float64     `json:"weight"`
-	Image         []string    `json:"image"`
-	ResizeMode    int         `json:"resize_mode"`
-	Lowvram       interface{} `json:"lowvram"`
-	ProcessorRes  int         `json:"processor_res"`
-	ThresholdA    int         `json:"threshold_a"`
-	ThresholdB    int         `json:"threshold_b"`
-	GuidanceStart float64     `json:"guidance_start"`
-	GuidanceEnd   float64     `json:"guidance_end"`
-	ControlMode   int         `json:"control_mode"`
-	PixelPerfect  interface{} `json:"pixel_perfect"`
+	Enabled    bool     `json:"enable"`
+	Module     string   `json:"module"`
+	Model      string   `json:"model"`
+	Weight     float64  `json:"weight"`
+	Image      []string `json:"image"`
+	ResizeMode int      `json:"resize_mode"`
+	//Lowvram       interface{} `json:"lowvram"`
+	ProcessorRes  int     `json:"processor_res"`
+	ThresholdA    int     `json:"threshold_a"`
+	ThresholdB    int     `json:"threshold_b"`
+	GuidanceStart float64 `json:"guidance_start"`
+	GuidanceEnd   float64 `json:"guidance_end"`
+	ControlMode   int     `json:"control_mode"`
+	//PixelPerfect  interface{} `json:"pixel_perfect"`
 }
 
 type ControlNetJson struct {
@@ -316,9 +316,17 @@ func defaultImg2imgJson() Img2imgJson {
 		//ScriptArgs:                        nil,
 		//SendImages:                        false,
 		//SaveImages:                        false,
-		//AlwaysonScripts:                   struct{}{},
+		AlwaysonScripts: defaultAlwaysonScripts(),
 		//Infotext:                          "",
 	}
+}
+
+func defaultAlwaysonScripts() AlwaysonScripts {
+	return AlwaysonScripts{Controlnet: defaultControlnet()}
+}
+
+func defaultControlnet() ControlNetJson {
+	return ControlNetJson{Args: make([]ControlNetArgs, 0)}
 }
 
 func defaultImg2imgWithMaskJson() Img2imgWithMaskJson {
@@ -349,20 +357,20 @@ func defaultExtraSingleJson() ExtraSingleJson {
 
 func defaultControlNetArgs() ControlNetArgs {
 	return ControlNetArgs{
-		Enabled:       true,
-		Module:        "",
-		Model:         "",
-		Weight:        0,
-		Image:         nil,
-		ResizeMode:    0,
-		Lowvram:       nil,
-		ProcessorRes:  0,
-		ThresholdA:    0,
-		ThresholdB:    0,
+		Enabled:    true,
+		Module:     "",
+		Model:      "",
+		Weight:     1,
+		Image:      nil,
+		ResizeMode: 0,
+		//Lowvram:       nil,
+		ProcessorRes:  512,
+		ThresholdA:    100,
+		ThresholdB:    200,
 		GuidanceStart: 0,
-		GuidanceEnd:   0,
+		GuidanceEnd:   1,
 		ControlMode:   0,
-		PixelPerfect:  nil,
+		//PixelPerfect:  nil,
 	}
 }
 
@@ -424,6 +432,7 @@ func Img2img(w http.ResponseWriter, r *http.Request) {
 		temp.InitImages = initImg
 		temp.Prompt = img2ImgJson.Prompt
 		temp.NegativePrompt = img2ImgJson.NegativePrompt
+		temp.AlwaysonScripts = img2ImgJson.AlwaysonScripts
 		img2img = temp
 	} else {
 		temp := defaultImg2imgWithMaskJson()
@@ -433,6 +442,7 @@ func Img2img(w http.ResponseWriter, r *http.Request) {
 		temp.Prompt = img2ImgJson.Prompt
 		temp.NegativePrompt = img2ImgJson.NegativePrompt
 		temp.Mask = img2ImgJson.Mask
+		temp.AlwaysonScripts = img2ImgJson.AlwaysonScripts
 		img2img = temp
 	}
 	jsonData, err := json.Marshal(img2img)
@@ -475,6 +485,10 @@ func ExtraSingleImage(w http.ResponseWriter, r *http.Request) {
 
 func ControlNetModels(w http.ResponseWriter, r *http.Request) {
 	TransmitGet(sdServer+"/controlnet/model_list", w)
+}
+
+func ControlNetTypes(w http.ResponseWriter, r *http.Request) {
+	TransmitGet(sdServer+"/controlnet/control_types", w)
 }
 
 func CalculateImgWidthHeight(originW int, originH int) (w int, h int) {
