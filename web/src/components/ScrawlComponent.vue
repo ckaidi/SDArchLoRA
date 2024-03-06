@@ -120,6 +120,8 @@ export default {
 
       const canvas = document.getElementById('canvas')
       canvas.style.left = String((bodyWidth - imgWidth) / 2) + 'px'
+      console.log('modalMarginTop', that.modalMarginTop)
+      console.log('modalMarginLeft', that.modalMarginLeft)
       that.isCanvasShow = true
     })
   },
@@ -162,6 +164,9 @@ export default {
       const stopAxisY = event.pageY;
       ctx.beginPath();
       //由于整体设置了水平居中，因此需要做特殊处理：window.screen.availWidth/2 -300
+      console.log(canvas.offsetTop)
+      console.log(this.modalMarginTop)
+      console.log(this.startAxisY)
       const cl = canvas.offsetLeft + this.modalMarginLeft;
       const ct = canvas.offsetTop + this.modalMarginTop;
       ctx.moveTo(this.startAxisX - cl, this.startAxisY - ct);//moveTo(x,y) 定义线条开始坐标

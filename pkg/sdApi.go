@@ -86,8 +86,7 @@ type Txt2imgJson struct {
 	//ScriptArgs        []interface{} `json:"script_args"`
 	//SendImages        bool          `json:"send_images"`
 	//SaveImages        bool          `json:"save_images"`
-	AlwaysonScripts struct {
-	} `json:"alwayson_scripts"`
+	AlwaysonScripts AlwaysonScripts `json:"alwayson_scripts"`
 	//Infotext string `json:"infotext"`
 }
 
@@ -175,12 +174,12 @@ type ExtraSingleJson struct {
 }
 
 type ControlNetArgs struct {
-	Enabled    bool     `json:"enable"`
-	Module     string   `json:"module"`
-	Model      string   `json:"model"`
-	Weight     float64  `json:"weight"`
-	Image      []string `json:"image"`
-	ResizeMode int      `json:"resize_mode"`
+	Enabled bool    `json:"enable"`
+	Module  string  `json:"module"`
+	Model   string  `json:"model"`
+	Weight  float64 `json:"weight"`
+	//Image      string  `json:"image"`
+	ResizeMode int `json:"resize_mode"`
 	//Lowvram       interface{} `json:"lowvram"`
 	ProcessorRes  int     `json:"processor_res"`
 	ThresholdA    int     `json:"threshold_a"`
@@ -357,11 +356,11 @@ func defaultExtraSingleJson() ExtraSingleJson {
 
 func defaultControlNetArgs() ControlNetArgs {
 	return ControlNetArgs{
-		Enabled:    true,
-		Module:     "",
-		Model:      "",
-		Weight:     1,
-		Image:      nil,
+		Enabled: true,
+		Module:  "",
+		Model:   "",
+		Weight:  1,
+		//Image:      "null",
 		ResizeMode: 0,
 		//Lowvram:       nil,
 		ProcessorRes:  512,
@@ -389,6 +388,9 @@ func Txt2img(w http.ResponseWriter, r *http.Request) {
 	txt2img := defaultTxt2imgJson()
 	txt2img.Prompt = txt2ImgJson.Prompt
 	txt2img.NegativePrompt = txt2ImgJson.NegativePrompt
+	if txt2img.AlwaysonScripts.Controlnet.Args == nil {
+		txt2img.AlwaysonScripts.Controlnet.Args = make([]ControlNetArgs, 0)
+	}
 	jsonData, err := json.Marshal(txt2img)
 	handle(err)
 	reader := strings.NewReader(string(jsonData))

@@ -13,7 +13,7 @@ import {defineComponent} from "vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
 import Img2ImgComponent from "@/components/Img2ImgComponent.vue";
 import FooterButtonComponent from "@/components/FooterButtonComponent.vue"
-import {img2img, img2imgWithMask} from "@/sdApi.js";
+import {img2img} from "@/sdApi.js";
 
 export default defineComponent({
   components: {FooterButtonComponent, NavigationComponent, Img2ImgComponent},
@@ -35,14 +35,12 @@ export default defineComponent({
     uploadCallback(img) {
       this.selectImg = img
     },
-    sdGenerate() {
+    generateCore(imgUrl, data) {
       const prompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.prompt
       const negativePrompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.negativePrompt
       const that = this
-      const data = {
-        prompt: prompt,
-        negative_prompt: negativePrompt,
-      }
+      data.prompt = prompt
+      data.negative_prompt = negativePrompt
       const isControlNetEnable = this.$refs.img2imgComponent.$refs.sdSettingComponent.isControlNetEnable
       if (isControlNetEnable) {
         const selectControlType = this.$refs.img2imgComponent.$refs.sdSettingComponent.selectControlType
@@ -62,14 +60,21 @@ export default defineComponent({
               guidance_start: 0,
               guidance_end: 1,
               control_mode: 0,
+              image: "null"
             }
           ]
         }
         data.alwayson_scripts = {
           controlnet: controlnet
         }
+      } else {
+        data.alwayson_scripts = {
+          controlnet: {
+            args: []
+          }
+        }
       }
-      img2img(this.selectImg, data, function (data) {
+      img2img(imgUrl, data, function (data) {
         const images = data['images']
         if (images !== null && images !== undefined) {
           if (images.length > 0) {
@@ -84,25 +89,20 @@ export default defineComponent({
         }
       })
     },
-    sdGenerateOrigin() {
-
+    sdGenerate() {
+      if (this.selectImg === '' || this.selectImg === null || this.selectImg === undefined) {
+        alert('请上传图片')
+      }else{
+        this.generateCore(this.selectImg, {})
+      }
     },
     sdRegenerate(mask) {
-      const negativePrompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.negativePrompt
-      const prompt = this.$refs.img2imgComponent.$refs.sdSettingComponent.prompt
-      const that = this
-      img2imgWithMask(this.generateBase64Image, mask, this.generateImgWidth, this.generateImgHeight, prompt, negativePrompt, function (data) {
-        const images = data['images']
-        if (images !== null && images !== undefined) {
-          if (images.length > 0)
-            that.generateBase64Image = "data:image/png;base64," + images[0]
-        }
-        const parameters = data['parameters']
-        if (parameters !== null && parameters !== undefined) {
-          that.generateImgWidth = parameters['width']
-          that.generateImgHeight = parameters['height']
-        }
-      }, mask)
+      const data = {
+        mask: mask,
+        width: this.generateImgWidth,
+        height: this.generateImgHeight
+      }
+      this.generateCore(this.generateBase64Image, data)
     }
   }
 })
