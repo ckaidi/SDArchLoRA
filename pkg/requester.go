@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -107,6 +108,24 @@ func TransmitGet(url string, w http.ResponseWriter) {
 	response, err := http.Get(url)
 	handle(err)
 	dataByte, err := io.ReadAll(response.Body)
+	handle(err)
+	_, err = w.Write(dataByte)
+	handle(err)
+}
+
+func TransmitPost(url string, w http.ResponseWriter, r *http.Request) {
+	// 检查请求方法是否为 POST
+	if r.Method != "POST" {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	dataByte, err := io.ReadAll(r.Body)
+	handle(err)
+	reader := strings.NewReader(string(dataByte))
+	response, err := http.Post(url, "application/json", reader)
+	handle(err)
+	dataByte, err = io.ReadAll(response.Body)
 	handle(err)
 	_, err = w.Write(dataByte)
 	handle(err)

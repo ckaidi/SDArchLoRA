@@ -10,6 +10,7 @@ func main() {
 	http.HandleFunc("/controlnet/types", pkg.Cors(pkg.ControlNetTypes))
 	http.HandleFunc("/archdaily", pkg.Cors(pkg.GetArchdailyImagesRoute))
 	http.HandleFunc("/txt2img", pkg.Cors(pkg.Txt2img))
+	http.HandleFunc("/txt2imgT", pkg.Cors(pkg.Txt2imgTransmit))
 	http.HandleFunc("/img2img", pkg.Cors(pkg.Img2img))
 	http.HandleFunc("/extra", pkg.Cors(pkg.ExtraSingleImage))
 	//不要加cors，不然再服务器部署之后会出现样式丢失的清空

@@ -402,6 +402,10 @@ func Txt2img(w http.ResponseWriter, r *http.Request) {
 	handle(err)
 }
 
+func Txt2imgTransmit(w http.ResponseWriter, r *http.Request) {
+	TransmitPost(sdServer+"/sdapi/v1/txt2img", w, r)
+}
+
 func Img2img(w http.ResponseWriter, r *http.Request) {
 	// 检查请求方法是否为 POST
 	if r.Method != "POST" {

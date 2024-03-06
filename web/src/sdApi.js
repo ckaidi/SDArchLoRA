@@ -16,7 +16,7 @@ function sendRequest(url, callback, data) {
 }
 
 export function txt2img(data, callback) {
-    const url = sdServer + '/txt2img'
+    const url = sdServer + '/txt2imgT'
     sendRequest(url, callback, data);
 }
 
