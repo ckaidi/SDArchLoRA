@@ -1,37 +1,12 @@
 <template>
   <img :src="generateBase64Image" alt="" id="generateImg"/>
   <canvas v-show="isCanvasShow" class=" border-0" id="canvas" :width="width" :height="height"
-          style="position: absolute">浏览器不支持canvas
-    <!-- 如果不支持会显示这段文字 --></canvas>
+          style="position: absolute">浏览器不支持canvas<!-- 如果不支持会显示这段文字 --></canvas>
   <canvas class="visually-hidden" :width="width" :height="height" id="canvasGenerate"/>
   <div>
     <label for="customRange1" class="form-label">画笔大小</label>
     <input type="range" class="form-range" id="customRange1" min="1" max="20" v-model="penWidth">
   </div>
-  <!--    <template v-if="!toolsTabList">-->
-  <!--      <div class="section">-->
-  <!--        <span class="info">选择橡皮擦：</span>-->
-  <!--        <button class="btn colorBtn" :style="'background-color:' + backgroundColor + ';'" @click='setPenColor();'>-->
-  <!--          {{ backgroundColor }}-->
-  <!--        </button>-->
-  <!--      </div>-->
-  <!--      <div class="section">-->
-  <!--        <span class="info">选择画笔大小：</span>-->
-  <!--        <progress :value="progressValue"-->
-  <!--                  style="cursor: pointer;"-->
-  <!--                  id="progress"-->
-  <!--                  max="1"-->
-  <!--                  :title="progressValue * 100 +'%'"-->
-  <!--                  @click="setPenWidth">-->
-  <!--        </progress>-->
-  <!--        <span style="margin-left: 0.3125rem;">{{ 20 * progressValue }}px</span>-->
-  <!--      </div>-->
-  <!--      <div class="section">-->
-  <!--        <span class="info">输出画板内容到下面的图片：</span>-->
-  <!--        <button class="btn" @click="createImage();">EXPORT</button>-->
-  <!--      </div>-->
-  <!--      <img id="image_png" alt="" style="width: 300px;height: 300px">-->
-  <!--    </template>-->
 </template>
 
 <script>

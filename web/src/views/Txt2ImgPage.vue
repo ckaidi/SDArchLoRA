@@ -4,7 +4,8 @@
   <Txt2ImgComponent :generate-base64-image="generateBase64Image" ref="txt2imgComponent"/>
   <!--  <button class="btn btn-primary">下载图片</button>-->
   <div style="height: 72px"/>
-  <FooterButtonComponent :generate-img="generateBase64Image" :generate-func="sdGenerate" :regenerate-func="sdRegenerate"
+  <FooterButtonComponent :generate-img="generateBase64Image" :generate-func="sdGenerate"
+                         :regenerate-func="sdRegenerate" :is-enable="true"
                          :generate-img-height="generateImgHeight" :generate-img-width="generateImgWidth"/>
 </template>
 <script>
@@ -15,6 +16,7 @@ import Txt2ImgComponent from "@/components/Txt2ImgComponent.vue";
 import FooterButtonComponent from "@/components/FooterButtonComponent.vue"
 import Img2ImgComponent from "@/components/Img2ImgComponent.vue";
 import {txt2img, txt2imgRedraw} from "@/sdApi.js";
+import {hideGeneratingModal} from "@/main.js";
 
 export default defineComponent({
   components: {Img2ImgComponent, FooterButtonComponent, Txt2ImgComponent, NavigationComponent},
@@ -91,6 +93,7 @@ export default defineComponent({
               that.generateImgHeight = image.height
             }
             image.src = that.generateBase64Image
+            hideGeneratingModal()
           }
         }
       })

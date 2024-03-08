@@ -6,6 +6,7 @@
   <div style="height: 72px"/>
   <FooterButtonComponent :generate-img="generateBase64Image" :generate-func="sdGenerate"
                          :regenerate-func="sdRegenerate"
+                         :is-enable="!(this.selectImg === '' || this.selectImg === null || this.selectImg === undefined)"
                          :generate-img-height="generateImgHeight" :generate-img-width="generateImgWidth"/>
 </template>
 <script>
@@ -14,6 +15,7 @@ import NavigationComponent from "@/components/NavigationComponent.vue";
 import Img2ImgComponent from "@/components/Img2ImgComponent.vue";
 import FooterButtonComponent from "@/components/FooterButtonComponent.vue"
 import {img2img, sdServer} from "@/sdApi.js";
+import {hideGeneratingModal} from "@/main.js";
 
 export default defineComponent({
   components: {FooterButtonComponent, NavigationComponent, Img2ImgComponent},
@@ -101,6 +103,7 @@ export default defineComponent({
               that.generateImgHeight = image.height
             }
             image.src = that.generateBase64Image
+            hideGeneratingModal()
           }
         }
       })

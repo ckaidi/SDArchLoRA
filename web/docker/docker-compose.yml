@@ -1,0 +1,12 @@
+version: '3.4'
+
+services:
+  sdrsWeb:
+    image: sdrsweb
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "443:443"
+    volumes:
+      - D:\programmer\sdrsData:/usr/share/nginx/html/temp

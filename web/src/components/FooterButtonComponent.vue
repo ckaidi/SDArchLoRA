@@ -15,17 +15,22 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
           <button type="button" class="btn btn-primary" @click="clearCanvas">清空画布</button>
-          <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @click="regenerate">重新生成</button>
+          <button id="regenerateButton" type="button" class="btn btn-primary" data-bs-dismiss="modal"
+                  @click="regenerate">重新生成
+          </button>
         </div>
       </div>
     </div>
   </div>
 
   <div class="modal-footer fixed-bottom bg-light border-top border-1 secondary-subtle align-content-end">
-    <button :disabled="generateImg===''" class="btn btn-primary m-2" data-bs-toggle="modal"
+    <button class="btn btn-primary m-2" data-bs-toggle="modal"
+            :disabled="generateImg === '' || generateImg === null || generateImg === undefined"
             data-bs-target="#scrawlModal">局部重绘
     </button>
-    <button class="btn btn-primary m-2" @click="generate">生成</button>
+    <button style="visibility: visible" class="btn btn-primary m-2" @click="generate" data-bs-toggle="modal"
+            :disabled="!isEnable" data-bs-target="#staticBackdrop">生成
+    </button>
   </div>
 </template>
 <script>
@@ -38,6 +43,7 @@ import ScrawlComponent from "@/components/ScrawlComponent.vue";
 export default defineComponent({
   components: {ScrawlComponent, Img2ImgComponent, NavigationComponent},
   props: {
+    isEnable: true,
     // base64Img
     generateImg: {
       type: String,
@@ -65,7 +71,7 @@ export default defineComponent({
       const base64Mask = this.$refs.scrawlComponent.createImage()
       this.regenerateFunc(base64Mask)
     }
-  }
+  },
 })
 </script>
 

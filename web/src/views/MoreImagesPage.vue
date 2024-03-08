@@ -58,7 +58,7 @@ export default {
     },
     mouseover(item) {
       item.show = true
-      this.currentSelectUrl = item.src.original.replace("medium_jpg", "large_jpg");
+      this.currentSelectUrl = item.src.original
     },
     mouseleave(item) {
       item.show = false
