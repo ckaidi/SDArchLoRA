@@ -11,6 +11,7 @@ import VueCookies from 'vue-cookies'
 import {createApp} from 'vue'
 import App from './App.vue'
 import router from "@/router/index.js";
+import {sdServer} from "@/sdApi.js";
 
 window.bootstrap = bootstrap;
 export const OneDay = 60 * 60 * 24
@@ -51,8 +52,7 @@ export function searchArchDaily(keyword, onReceiveImg) {
     const that = instance
     // 创建一个 WebSocket 对象，连接到本地的 8080 端口
     if (keyword !== "") {
-        const ws = new WebSocket("ws://gz.derper.chenkaidi.top:8081/archdaily?keyword=" + keyword +
-            "&page=1&projectCount=0");
+        const ws = new WebSocket("ws://127.0.0。1:8081/archdaily?keyword=" + keyword + "&page=1&projectCount=0");
 
         searchCore(ws, onReceiveImg);
     }
@@ -64,8 +64,7 @@ export function continueSearchArchDaily(keyword, onReceiveImg) {
     if (keyword !== "") {
         const count = that.$cookies.get('projectCount')
         const page = that.$cookies.get('page')
-        const ws = new WebSocket("ws://gz.derper.chenkaidi.top:8081/archdaily?" + "keyword=" + keyword +
-            "&page=" + page + "&projectCount=" + count);
+        const ws = new WebSocket("ws://127.0.0。1:8081/archdaily?" + "keyword=" + keyword + "&page=" + page + "&projectCount=" + count);
 
         searchCore(ws, onReceiveImg);
     }
@@ -90,4 +89,34 @@ export function hideGeneratingModal() {
 
     // 从 DOM 中移除按钮
     header.removeChild(button);
+}
+
+export function saveImageToDB(name, buffer) {
+    const request = indexedDB.open("imagesDB", 1);
+
+    request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("images")) {
+            db.createObjectStore("images", {keyPath: "name"});
+        }
+    };
+
+    request.onsuccess = (e) => {
+        const db = e.target.result;
+        const transaction = db.transaction(["images"], "readwrite");
+        const store = transaction.objectStore("images");
+        const imgRequest = store.put({name, content: buffer});
+
+        imgRequest.onsuccess = () => {
+            console.log("Image saved successfully!");
+        };
+
+        imgRequest.onerror = (e) => {
+            console.error("Error saving the image:", e.target.error);
+        };
+    };
+
+    request.onerror = (e) => {
+        console.error("Error opening database:", e.target.error);
+    };
 }

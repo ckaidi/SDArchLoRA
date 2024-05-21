@@ -21,12 +21,8 @@ export default {
           name: "搜图"
         },
         {
-          path: "#/txt2img",
-          name: "文生图"
-        },
-        {
           path: "#/img2img",
-          name: "图生图"
+          name: "打标签"
         }
       ]
     }

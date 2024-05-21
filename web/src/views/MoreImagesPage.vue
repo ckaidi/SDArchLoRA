@@ -27,7 +27,7 @@
                  :class="{'cardButtonShow':item.show,'cardButtonHide':!item.show}">
               <a type="button" class="btn btn-secondary"
                  :href="'/#/img2img?' + 'imgUrl=' + this.currentSelectUrl">
-                AI生图
+                放入训练
               </a>
             </div>
             <img :src=url :alt="item.name" class="card-img-top">
