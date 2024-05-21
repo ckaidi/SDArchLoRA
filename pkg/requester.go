@@ -113,11 +113,10 @@ func img2Base64Internal(imgUrl string) ImgConfig {
 
 	// 将图片数据转换为base64字符串
 	base64Image := base64.StdEncoding.EncodeToString(imageData)
-	w, h := CalculateImgWidthHeight(config.Width, config.Height)
 	return ImgConfig{
 		Base64: "data:image/png;base64," + base64Image,
-		Width:  w,
-		Height: h,
+		Width:  config.Width,
+		Height: config.Height,
 	}
 }
 

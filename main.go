@@ -6,13 +6,8 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/controlnet/models", pkg.Cors(pkg.ControlNetModels))
-	http.HandleFunc("/controlnet/types", pkg.Cors(pkg.ControlNetTypes))
 	http.HandleFunc("/archdaily", pkg.Cors(pkg.GetArchdailyImagesRoute))
 	http.HandleFunc("/img2base64", pkg.Cors(pkg.Img2Base64))
-	http.HandleFunc("/txt2img", pkg.Cors(pkg.Txt2img))
-	http.HandleFunc("/img2img", pkg.Cors(pkg.Img2img))
-	http.HandleFunc("/extra", pkg.Cors(pkg.ExtraSingleImage))
 	//不要加cors，不然再服务器部署之后会出现样式丢失的清空
 
 	err := http.ListenAndServe(":8081", nil)
