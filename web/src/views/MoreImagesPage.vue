@@ -46,12 +46,11 @@ import SearchComponent from "@/components/SearchComponent.vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
 import Img2ImgComponent from "@/components/Img2ImgComponent.vue";
 import {LazyImg, Waterfall} from "vue-waterfall-plugin-next";
-import {continueSearchArchDaily, OneDay} from "@/main.js";
+import {loadSpiderDataFromDB, OneDay, saveSpiderDataToDB} from "@/main.js";
 
 
 export default {
   components: {NavigationComponent, SearchComponent, LazyImg, Waterfall, Img2ImgComponent},
-
   methods: {
     showMore() {
       this.$refs.searchComponent.showMore()
@@ -63,16 +62,21 @@ export default {
     mouseleave(item) {
       item.show = false
     },
+    // 接收到新图片到处理函数
     addImages(imageText) {
       if (imageText === 'end')
         return
       if (imageText.startsWith('chenkaidiConfig')) {
         const texts = imageText.split('/')
+
         this.$cookies.set('page', Number(texts[1]), OneDay, '/')
         this.$cookies.set('projectCount', Number(texts[2]), OneDay, '/')
+        saveSpiderDataToDB('page', Number(texts[1]))
+        saveSpiderDataToDB('projectCount', Number(texts[2]))
         return
       }
       const image = JSON.parse(imageText)
+      saveSpiderDataToDB(image.name, image.url)
       this.list.push({
         src: {
           original: image.url
@@ -80,6 +84,9 @@ export default {
         show: false
       })
     }
+  },
+  created() {
+    loadSpiderDataFromDB(this.list)
   },
   data() {
     return {

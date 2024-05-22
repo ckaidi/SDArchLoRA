@@ -9,11 +9,12 @@
   </div>
 </template>
 <script>
-import {continueSearchArchDaily, searchArchDaily} from "@/main.js";
+import {clearObjectStore, continueSearchArchDaily, searchArchDaily} from "@/main.js";
 
 export default {
   methods: {
     search() {
+      clearObjectStore("spiderDB", "spiderData")
       searchArchDaily(this.keyword, this.onReceiveImg)
     },
     showMore() {
