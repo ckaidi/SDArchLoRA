@@ -1,25 +1,34 @@
 <template>
-  <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-       aria-labelledby="staticBackdropLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header" id="staticHeader">
-          <h1 class="modal-title fs-5" id="staticBackdropLabel">提示</h1>
-        </div>
-        <div class="modal-body">
-          生成中....
-        </div>
-      </div>
-    </div>
-  </div>
+  <ConceptInputModal/>
   <router-view/>
+  <div class="position-fixed bottom-0 end-0 mb-3 me-3 rounded-circle bg-primary">
+    <button class="btn btn-primary py-2 d-flex align-items-center justify-content-center bi-r-circle "
+            data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="增加概念"
+            data-bs-custom-class="custom-tooltip"
+            id="bd-theme" @click="addConcept"
+            type="button"
+            style="width: 42px; height: 42px; border-radius: 50%;">
+      <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <!-- Increased stroke-width for a thicker plus sign -->
+        <path stroke="white" stroke-width="4" fill="none"
+              d="M0 12 H24 M12 0 V24"/>
+      </svg>
+    </button>
+  </div>
+
 </template>
 <script>
 import MoreImagesPage from "@/views/MoreImagesPage.vue";
-import {OneDay} from "@/main.js";
+import ConceptInputModal from "@/components/ConceptInputModal.vue";
+import {emitter, OneDay} from "@/main.js";
 
 export default {
-  components: {MoreImagesPage},
+  components: {MoreImagesPage, ConceptInputModal},
+  methods: {
+    addConcept() {
+      emitter.emit('modalSwitch', 'progress');
+    }
+  },
   created() {
     this.$cookies.config(OneDay, '/')
     this.$cookies.set('page', 1, OneDay, '/')

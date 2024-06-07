@@ -4,7 +4,8 @@ import {
 } from "vue-router";
 
 import MoreImagesPage from '../views/MoreImagesPage.vue'
-import Img2ImgPage from "../views/TaggerPage.vue";
+import TaggerPage from "../views/TaggerPage.vue";
+import CropperPage from "../views/CropperPage.vue";
 
 const routes = [
     {
@@ -15,7 +16,12 @@ const routes = [
     {
         path: "/img2img",
         name: "img2img",
-        component: Img2ImgPage,
+        component: TaggerPage,
+    },
+    {
+        path: "/cropper",
+        name: "cropper",
+        component: CropperPage,
     }
 ];
 

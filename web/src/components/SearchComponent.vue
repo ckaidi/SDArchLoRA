@@ -9,12 +9,13 @@
   </div>
 </template>
 <script>
-import {clearObjectStore, continueSearchArchDaily, searchArchDaily} from "@/main.js";
+import {continueSearchArchDaily, searchArchDaily} from "@/main.js";
 
 export default {
   methods: {
     search() {
-      clearObjectStore("spiderDB", "spiderData")
+      // clearObjectStore("spiderDB", "spiderData")
+      sessionStorage.setItem('keyword', this.keyword)
       searchArchDaily(this.keyword, this.onReceiveImg)
     },
     showMore() {
@@ -23,6 +24,12 @@ export default {
   },
   props: {
     onReceiveImg: null
+  },
+  created() {
+    const keyword = sessionStorage.getItem('keyword');
+    if (keyword !== null) {
+      this.keyword = keyword;
+    }
   },
   data() {
     return {

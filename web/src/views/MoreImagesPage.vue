@@ -26,7 +26,7 @@
                  w-100 h-100 text-white fs-5 bg-body-secondary opacity-75"
                  :class="{'cardButtonShow':item.show,'cardButtonHide':!item.show}">
               <a type="button" class="btn btn-secondary"
-                 :href="'/#/img2img?' + 'imgUrl=' + this.currentSelectUrl">
+                 :href="'/#/cropper?' + 'imgUrl=' + item.src.original + '&imgName=' + item.name + '&document_id=' + item.document_id">
                 放入训练
               </a>
             </div>
@@ -44,13 +44,12 @@
 import 'vue-waterfall-plugin-next/dist/style.css'
 import SearchComponent from "@/components/SearchComponent.vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
-import Img2ImgComponent from "@/components/Img2ImgComponent.vue";
 import {LazyImg, Waterfall} from "vue-waterfall-plugin-next";
-import {loadSpiderDataFromDB, OneDay, saveSpiderDataToDB} from "@/main.js";
+import {createClientId, loadDataFromDB, OneDay, saveProjectInfoToDB, saveSpiderDataToDB} from "@/main.js";
 
 
 export default {
-  components: {NavigationComponent, SearchComponent, LazyImg, Waterfall, Img2ImgComponent},
+  components: {NavigationComponent, SearchComponent, LazyImg, Waterfall},
   methods: {
     showMore() {
       this.$refs.searchComponent.showMore()
@@ -75,25 +74,55 @@ export default {
         saveSpiderDataToDB('projectCount', Number(texts[2]))
         return
       }
-      const image = JSON.parse(imageText)
-      saveSpiderDataToDB(image.name, image.url)
-      this.list.push({
-        src: {
-          original: image.url
-        },
-        show: false
-      })
+      const jsonData = JSON.parse(imageText)
+      if ("document_type" in jsonData) {
+        // 保存项目信息
+        saveProjectInfoToDB(jsonData.document_id, jsonData)
+      } else {
+        // 保存图片信息
+        saveSpiderDataToDB(jsonData.name, {
+          keyword: [sessionStorage.getItem('keyword')],
+          url: jsonData.url,
+          document_id: jsonData.document_id
+        })
+        this.list.push({
+          keyword: [sessionStorage.getItem('keyword')],
+          src: {
+            original: jsonData.url
+          },
+          document_id: jsonData.document_id,
+          name: jsonData.name,
+          show: false
+        })
+      }
     }
   },
-  created() {
-    loadSpiderDataFromDB(this.list)
+  beforeCreate() {
+    createClientId();
+    let keyword = sessionStorage.getItem('keyword')
+    if (keyword !== null) {
+      let arrays = []
+      let that = this
+      loadDataFromDB(keyword, arrays, () => {
+        for (const image of arrays) {
+          if (image.content.url === undefined) continue;
+          that.list.push({
+            src: {
+              original: image.content.url
+            },
+            document_id: image.content.document_id,
+            name: image.name,
+            show: false
+          })
+        }
+      });
+    }
   },
   data() {
     return {
       currentTab: "搜图",
       generateBase64Image: "",
       currentSelectUrl: "",
-      tabName: "SDRS",
       list: [],
       columnHeights: [0, 0, 0],
       options: {
