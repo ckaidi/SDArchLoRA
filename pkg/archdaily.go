@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gorilla/websocket"
+	"gorm.io/gorm"
 	"io"
 	"net/http"
 	"net/url"
@@ -27,11 +28,21 @@ type Aggregations struct {
 }
 
 type NameUrl struct {
+	gorm.Model
 	Name string `json:"name"`
 	Url  string `json:"url"`
 }
 
+type ImageDetail struct {
+	gorm.Model
+	Name       string `json:"name"`
+	Url        string `json:"url"`
+	DocumentId string `json:"document_id"`
+}
+
+// ImageGroup json模型兼数据模型
 type ImageGroup struct {
+	gorm.Model
 	UrlLarge         string `json:"url_large"`
 	UrlMedium        string `json:"url_medium"`
 	UrlSmall         string `json:"url_small"`
@@ -40,17 +51,24 @@ type ImageGroup struct {
 	UrlSlideshow     string `json:"url_slideshow"`
 	UrlMini          string `json:"url_mini"`
 	UrlSmallPortrait string `json:"url_small_portrait"`
+	DocumentOwners   string //数据库字段
+	Tags             string //数据库字段
+	UserTags         string //用户定义字段
 }
 
 type ResultDetail struct {
-	Author                  NameUrl      `json:"author"`
-	BookmarkedProductsCount int          `json:"bookmarked_products_count"`
-	Categories              interface{}  `json:"categories"`
-	DocumentId              string       `json:"document_id"`
-	DocumentType            string       `json:"document_type"`
-	FeaturedImages          ImageGroup   `json:"featured_images"`
-	Location                interface{}  `json:"location"`
-	MetaDescription         string       `json:"meta_description"`
+	gorm.Model
+	AuthorID                uint
+	Author                  NameUrl     `json:"author"`
+	BookmarkedProductsCount int         `json:"bookmarked_products_count"`
+	Categories              interface{} `json:"categories"`
+	DocumentId              string      `json:"document_id"`
+	DocumentType            string      `json:"document_type"`
+	FeaturedImagesID        uint
+	FeaturedImages          ImageGroup  `json:"featured_images"`
+	Location                interface{} `json:"location"`
+	MetaDescription         string      `json:"meta_description"`
+	MiniaturesID            uint
 	Miniatures              []ImageGroup `json:"miniatures"`
 	Offices                 []NameUrl    `json:"offices"`
 	Photographers           []NameUrl    `json:"photographers"`
@@ -132,9 +150,15 @@ func getImagesUrl(r *http.Request, conn *websocket.Conn, key string, page int) {
 }
 
 func analyseProject(conn *websocket.Conn, project ResultDetail, allCount *int) {
+	dbModel := AddProjectToDatabase(project)
+	err := conn.WriteJSON(dbModel)
+	if err != nil {
+		fmt.Println("写入项目信息数据库失败")
+		fmt.Println(err)
+	}
 	Get(project.Url, func(response *http.Response) {
 		defer func(Body io.ReadCloser) {
-			err := Body.Close()
+			err = Body.Close()
 			handle(err)
 		}(response.Body)
 		reader, err := goquery.NewDocumentFromReader(response.Body)
@@ -146,9 +170,10 @@ func analyseProject(conn *websocket.Conn, project ResultDetail, allCount *int) {
 			if imageUrl != "" {
 				lastText := strings.Split(imageUrl, "/")
 				fmt.Print(lastText)
-				err = conn.WriteJSON(NameUrl{
-					Name: title,
-					Url:  imageUrl,
+				err = conn.WriteJSON(ImageDetail{
+					Name:       title,
+					Url:        imageUrl,
+					DocumentId: project.DocumentId,
 				})
 				handle(err)
 				*allCount += 1
