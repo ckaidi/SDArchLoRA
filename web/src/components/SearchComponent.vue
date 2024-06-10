@@ -14,7 +14,6 @@ import {continueSearchArchDaily, searchArchDaily} from "@/main.js";
 export default {
   methods: {
     search() {
-      // clearObjectStore("spiderDB", "spiderData")
       sessionStorage.setItem('keyword', this.keyword)
       searchArchDaily(this.keyword, this.onReceiveImg)
     },
@@ -44,7 +43,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-
-</style>

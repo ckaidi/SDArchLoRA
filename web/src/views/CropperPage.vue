@@ -94,7 +94,7 @@ export default {
   },
   methods: {
     nextStep() {
-      const aLink = document.createElement('a');
+      document.createElement('a');
       // 输出
       this.$refs.cropper.getCropData((data) => {
         let document_id = this.$route.query.document_id;
@@ -131,11 +131,13 @@ export default {
                 imgData.tags.push(tagsKey);
             }
           }
+          imgData.keyword = sessionStorage.getItem('keyword');
           saveTaggerImageToDB(this.$route.query.imgName, imgData)
           window.location = '#/img2img'
         });
       })
-    },
+    }
+    ,
     // 实时预览函数
     down(type) {
       const aLink = document.createElement('a');

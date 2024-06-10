@@ -1,5 +1,6 @@
 <template>
   <ConceptInputModal/>
+  <ConceptSelectModal/>
   <router-view/>
   <div class="position-fixed bottom-0 end-0 mb-3 me-3 rounded-circle bg-primary">
     <button class="btn btn-primary py-2 d-flex align-items-center justify-content-center bi-r-circle "
@@ -20,13 +21,14 @@
 <script>
 import MoreImagesPage from "@/views/MoreImagesPage.vue";
 import ConceptInputModal from "@/components/ConceptInputModal.vue";
-import {emitter, OneDay} from "@/main.js";
+import ConceptSelectModal from "@/components/ConceptSelectModal.vue";
+import {conceptModalOpenEvent, emitter, OneDay} from "@/main.js";
 
 export default {
-  components: {MoreImagesPage, ConceptInputModal},
+  components: {MoreImagesPage, ConceptInputModal, ConceptSelectModal},
   methods: {
     addConcept() {
-      emitter.emit('modalSwitch', 'progress');
+      emitter.emit(conceptModalOpenEvent, 'progress');
     }
   },
   created() {

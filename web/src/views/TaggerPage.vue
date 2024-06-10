@@ -36,7 +36,7 @@
         <label class="fw-bolder row m-1 justify-content-start">搜索关键字</label>
         <div class="gap-2"
              style="white-space: normal;display: inline-flex;overflow-wrap: break-word;word-break: break-word;flex-wrap: wrap">
-          <span v-for="tag in selectImg.projectTag" :key="tag"
+          <span v-for="tag in selectImg.searchTag" :key="tag"
                 class="badge d-flex p-2 align-items-center rounded-pill border "
                 style="cursor: pointer" @click="selectTag(tag,true)"
                 :class="tag.color">
@@ -92,7 +92,7 @@
 <script>
 import {defineComponent} from "vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
-import {createClientId, emitter, loadDataFromDB, tipsModalEvent} from "@/main.js";
+import {createClientId, emitter, loadConceptDataFromDB, tipsModalEvent} from "@/main.js";
 
 export default defineComponent({
   components: {NavigationComponent},
@@ -190,26 +190,23 @@ export default defineComponent({
       emitter.emit(tipsModalEvent, {});
     }
   },
-  created() {
+  async created() {
     createClientId();
-    let arrays = []
-    let that = this
-    loadDataFromDB('images', arrays, () => {
-      let index = 0;
-      for (const image of arrays) {
-        that.allImages.push({
-          index: index,
-          url: image.content.base64,
-          tag: [],
-          searchTag: that.createTags(image.content.keyword),
-          projectTag: that.createTags(image.content.tags),
-        });
-        index++;
-      }
-      if (that.allImages.length > 0) {
-        that.selectImg = that.allImages[0];
-      }
-    });
+    const arrays = await loadConceptDataFromDB('images');
+    let index = 0;
+    for (const image of arrays) {
+      this.allImages.push({
+        index: index,
+        url: image.content.base64,
+        tag: [],
+        searchTag: this.createTags([image.content.keyword]),
+        projectTag: this.createTags(image.content.tags),
+      });
+      index++;
+    }
+    if (this.allImages.length > 0) {
+      this.selectImg = this.allImages[0];
+    }
   },
 })
 </script>

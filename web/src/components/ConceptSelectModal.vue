@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+  <div class="modal fade" id="selectStaticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
        aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -8,7 +8,12 @@
         </div>
         <div class="modal-body">
           <form>
-            <input type="text" class="form-control" id="message-text" placeholder="lora概念" v-model="concept">
+            <select class="form-select" id="message-text" v-model="concept">
+              <option selected>Open this select menu</option>
+              <option value="1">One</option>
+              <option value="2">Two</option>
+              <option value="3">Three</option>
+            </select>
           </form>
         </div>
         <div class="modal-footer">
@@ -27,7 +32,7 @@
 </template>
 <script>
 
-import {addConcept, conceptModalOpenEvent, emitter} from "@/main";
+import {addConcept, conceptModalOpenEvent, emitter, selectModalOpenEvent} from "@/main";
 
 export default {
   data() {
@@ -40,8 +45,8 @@ export default {
     }
   },
   mounted() {
-    emitter.on(conceptModalOpenEvent, () => {
-      const myModal = new bootstrap.Modal(document.getElementById('staticBackdrop'), {
+    emitter.on(selectModalOpenEvent, () => {
+      const myModal = new bootstrap.Modal(document.getElementById('selectStaticBackdrop'), {
         backdrop: 'static', // 设置背景为静态
         keyboard: false // 禁止键盘关闭模态框
       });
@@ -49,7 +54,7 @@ export default {
     })
   },
   methods: {
-    addConcept
+    addConcept,
   }
 }
 </script>

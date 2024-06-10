@@ -25,10 +25,9 @@
             <div class="position-absolute top-0 left-0 d-flex justify-content-center align-items-center
                  w-100 h-100 text-white fs-5 bg-body-secondary opacity-75"
                  :class="{'cardButtonShow':item.show,'cardButtonHide':!item.show}">
-              <a type="button" class="btn btn-secondary"
-                 :href="'/#/cropper?' + 'imgUrl=' + item.src.original + '&imgName=' + item.name + '&document_id=' + item.document_id">
+              <button type="button" class="btn btn-secondary" @click="tagImg(item)">
                 放入训练
-              </a>
+              </button>
             </div>
             <img :src=url :alt="item.name" class="card-img-top">
           </div>
@@ -45,12 +44,24 @@ import 'vue-waterfall-plugin-next/dist/style.css'
 import SearchComponent from "@/components/SearchComponent.vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
 import {LazyImg, Waterfall} from "vue-waterfall-plugin-next";
-import {createClientId, loadDataFromDB, OneDay, saveProjectInfoToDB, saveSpiderDataToDB} from "@/main.js";
+import {
+  createClientId,
+  getConcept,
+  loadConceptDataFromDB,
+  loadDataFromDB,
+  OneDay,
+  saveProjectInfoToDB,
+  saveSpiderDataToDB
+} from "@/main.js";
 
 
 export default {
   components: {NavigationComponent, SearchComponent, LazyImg, Waterfall},
   methods: {
+    async tagImg(item) {
+      const concept = await getConcept();
+      window.location = "/#/cropper?" + "imgUrl=" + item.src.original + "&imgName=" + item.name + "&document_id=" + item.document_id
+    },
     showMore() {
       this.$refs.searchComponent.showMore()
     },
@@ -97,26 +108,32 @@ export default {
       }
     }
   },
-  beforeCreate() {
+  async beforeCreate() {
     createClientId();
     let keyword = sessionStorage.getItem('keyword')
     if (keyword !== null) {
-      let arrays = []
-      let that = this
-      loadDataFromDB(keyword, arrays, () => {
-        for (const image of arrays) {
-          if (image.content.url === undefined) continue;
-          that.list.push({
-            src: {
-              original: image.content.url
-            },
-            document_id: image.content.document_id,
-            name: image.name,
-            show: false
-          })
-        }
-      });
+      const arrays = await loadConceptDataFromDB(keyword);
+      for (const image of arrays) {
+        if (image.content.url === undefined) continue;
+        this.list.push({
+          src: {
+            original: image.content.url
+          },
+          document_id: image.content.document_id,
+          name: image.name,
+          show: false
+        })
+      }
     }
+  },
+  async created() {
+    const concept = await getConcept();
+    // const concepts = await loadDataFromDB('concepts', 'concepts');
+    // if (concepts.length > 0) {
+    //
+    // } else {
+    //   const concept = await getConcept();
+    // }
   },
   data() {
     return {
