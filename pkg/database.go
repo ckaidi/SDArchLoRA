@@ -1,9 +1,11 @@
 package pkg
 
 import (
+	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"os"
 )
 
 // ProjectDatabase 项目数据库
@@ -29,7 +31,13 @@ type ImageDatabase struct {
 }
 
 func AddProjectToDatabase(project ResultDetail) *ProjectDatabase {
-	dsn := "host=localhost user=spider password=spider dbname=spider port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+	host := os.Getenv("PGHOST")
+	user := os.Getenv("GADA_PGUSER")
+	password := os.Getenv("GADA_PGPASSWORD")
+	dbname := os.Getenv("GADA_PGDBNAME")
+	port := os.Getenv("PGPORT")
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
+		host, user, password, dbname, port)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
