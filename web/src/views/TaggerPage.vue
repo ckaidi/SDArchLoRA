@@ -131,7 +131,8 @@ export default defineComponent({
           const foundElement = this.selectImg.tag.find(element => element === tag);
           const foundElement2 = this.allTaggers.find(element => element === tag);
           const foundElement3 = this.selectImg.projectTag.find(element => element === tag);
-          if (foundElement === undefined && (foundElement2 !== undefined || foundElement3 !== undefined)) {
+          const foundElement4 = this.selectImg.searchTag.find(element => element === tag);
+          if (foundElement === undefined && (foundElement2 !== undefined || foundElement3 !== undefined || foundElement4 !== undefined)) {
             this.selectImg.tag.push(tag)
           }
         }
