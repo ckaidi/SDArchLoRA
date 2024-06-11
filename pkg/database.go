@@ -46,7 +46,7 @@ func AddProjectToDatabase(project ResultDetail) *ProjectDatabase {
 	// 迁移 schema
 	err = db.AutoMigrate(&ProjectDatabase{})
 	if err != nil {
-		panic(err)
+		return nil
 	}
 
 	projectDb := ProjectDatabase{

@@ -23,6 +23,10 @@ type ImgConfig struct {
 	Height int
 }
 
+type TrainStruct struct {
+	Base64 string `json:"base64"`
+}
+
 var useProxy = false
 
 func Get(webUrl string, callback func(*http.Response)) {
@@ -145,4 +149,21 @@ func TransmitPost(url string, w http.ResponseWriter, r *http.Request) {
 	handle(err)
 	_, err = w.Write(dataByte)
 	handle(err)
+}
+
+// TrainData 上传训练数据
+func TrainData(w http.ResponseWriter, r *http.Request) {
+	// 检查请求方法是否为 POST
+	if r.Method == "POST" {
+		body, err := io.ReadAll(r.Body)
+		handle(err)
+		var trainData TrainStruct
+		err = json.Unmarshal(body, &trainData)
+		handle(err)
+	} else if r.Method == "GET" {
+
+	} else {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
 }
