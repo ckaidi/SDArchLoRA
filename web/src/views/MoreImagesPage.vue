@@ -13,7 +13,7 @@
         :animation-effect="options.animationEffect"
         :animation-duration="options.animationDuration"
         :animation-delay="options.animationDelay"
-        :lazyload=false
+        :lazyload=true
         :cross-origin=true
         :align="options.align"
     >
@@ -45,13 +45,11 @@ import SearchComponent from "@/components/SearchComponent.vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
 import {LazyImg, Waterfall} from "vue-waterfall-plugin-next";
 import {
-  createClientId,
-  getConcept,
-  loadConceptDataFromDB,
-  loadDataFromDB,
   OneDay,
+  getConcept,
+  createClientId,
   saveProjectInfoToDB,
-  saveSpiderDataToDB
+  updateConceptItem, saveDataToConceptToDB, loadConceptDataFromDB, getKeyword,
 } from "@/main.js";
 
 
@@ -78,11 +76,8 @@ export default {
         return
       if (imageText.startsWith('chenkaidiConfig')) {
         const texts = imageText.split('/')
-
-        this.$cookies.set('page', Number(texts[1]), OneDay, '/')
-        this.$cookies.set('projectCount', Number(texts[2]), OneDay, '/')
-        saveSpiderDataToDB('page', Number(texts[1]))
-        saveSpiderDataToDB('projectCount', Number(texts[2]))
+        updateConceptItem('searches', sessionStorage.getItem('keyword'), 'page_count', Number(texts[1]))
+        updateConceptItem('searches', sessionStorage.getItem('keyword'), 'project_count', Number(texts[2]))
         return
       }
       const jsonData = JSON.parse(imageText)
@@ -91,11 +86,12 @@ export default {
         saveProjectInfoToDB(jsonData.document_id, jsonData)
       } else {
         // 保存图片信息
-        saveSpiderDataToDB(jsonData.name, {
+        saveDataToConceptToDB('images', jsonData.name, {
+          name: jsonData.name,
           keyword: [sessionStorage.getItem('keyword')],
           url: jsonData.url,
           document_id: jsonData.document_id
-        })
+        });
         this.list.push({
           keyword: [sessionStorage.getItem('keyword')],
           src: {
@@ -110,30 +106,23 @@ export default {
   },
   async beforeCreate() {
     createClientId();
-    let keyword = sessionStorage.getItem('keyword')
-    if (keyword !== null) {
-      const arrays = await loadConceptDataFromDB(keyword);
+    const concept = await getConcept();
+    let keyword = await getKeyword();
+    if (keyword !== null && keyword !== undefined) {
+      const arrays = await loadConceptDataFromDB('images');
       for (const image of arrays) {
-        if (image.content.url === undefined) continue;
+        if (image.url === undefined) continue;
+        if (!image.keyword.includes(keyword)) continue;
         this.list.push({
           src: {
-            original: image.content.url
+            original: image.url
           },
-          document_id: image.content.document_id,
+          document_id: image.document_id,
           name: image.name,
           show: false
         })
       }
     }
-  },
-  async created() {
-    const concept = await getConcept();
-    // const concepts = await loadDataFromDB('concepts', 'concepts');
-    // if (concepts.length > 0) {
-    //
-    // } else {
-    //   const concept = await getConcept();
-    // }
   },
   data() {
     return {

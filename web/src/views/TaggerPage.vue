@@ -86,13 +86,16 @@
         </div>
       </div>
     </div>
-
+  </div>
+  <div class="btn btn-primary m-4" @click="exportTrainData">
+    导出训练集
   </div>
 </template>
 <script>
 import {defineComponent} from "vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
-import {createClientId, emitter, loadConceptDataFromDB, tipsModalEvent} from "@/main.js";
+import {appendAlert, createClientId, loadConceptDataFromDB, saveDataToConceptToDB, updateConceptItem} from "@/main.js";
+import {sdServer} from "@/sdApi.js";
 
 export default defineComponent({
   components: {NavigationComponent},
@@ -125,7 +128,7 @@ export default defineComponent({
     smallSelected(item) {
       this.selectImg = item;
     },
-    selectTag(tag, flag) {
+    async selectTag(tag, flag) {
       if (flag) {
         if (this.selectImg !== '') {
           const foundElement = this.selectImg.tag.find(element => element === tag);
@@ -134,6 +137,7 @@ export default defineComponent({
           const foundElement4 = this.selectImg.searchTag.find(element => element === tag);
           if (foundElement === undefined && (foundElement2 !== undefined || foundElement3 !== undefined || foundElement4 !== undefined)) {
             this.selectImg.tag.push(tag)
+            await updateConceptItem('train_images', this.selectImg.name, 'tags', JSON.stringify(this.selectImg.tag))
           }
         }
       } else {
@@ -172,7 +176,61 @@ export default defineComponent({
       return tag;
     },
     userTagSubmit() {
-
+      if (this.userInput !== undefined && this.userInput !== null && this.userInput !== "") {
+        const foundElement2 = this.allTaggers.find(element => element.tag === this.userInput);
+        if (foundElement2 === undefined || foundElement2 === null) {
+          let colors = this.badgeColor();
+          let d = {
+            name: this.userInput,
+            key: "archdaily",
+            tag: this.userInput,
+            color: colors[0],
+            svgColor: colors[1],
+            tagType: "archdaily"
+          }
+          this.allTaggers.push(d);
+          saveDataToConceptToDB('user_tags', this.userInput, d)
+          this.userInput = "";
+        } else {
+          appendAlert("tag已存在", "warning")
+        }
+      } else {
+        appendAlert("tag不能为空", "danger")
+      }
+    },
+    // 导出训练数据
+    exportTrainData() {
+      let jsonData = {
+        images: []
+      }
+      for (const image of this.allImages) {
+        let tagText = "";
+        let temp = {
+          index: image.index,
+          base64: image.url,
+          tags: [],
+        };
+        for (const tag of image.tag) {
+          // temp.tags.push({
+          //   key: tag.key,
+          //   tag: tag.tag,
+          //   tagType: tag.tagType,
+          // });
+          tagText += tag.tag + ','
+        }
+        jsonData.images.push(temp);
+      }
+      const xhr = new XMLHttpRequest();
+      const that = this
+      xhr.open('POST', sdServer + '/traindata', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+        } else {
+          alert('网络错误，请重试')
+        }
+      };
+      xhr.send(jsonData);
     },
   },
   data() {
@@ -185,23 +243,22 @@ export default defineComponent({
     }
   },
   // 检查是否有图片
-  beforeCreate() {
-    const concept = sessionStorage.getItem('concept')
-    if (concept === undefined) {
-      emitter.emit(tipsModalEvent, {});
-    }
+  async beforeCreate() {
+    this.allTaggers = await loadConceptDataFromDB('user_tags');
   },
   async created() {
     createClientId();
-    const arrays = await loadConceptDataFromDB('images');
+    const arrays = await loadConceptDataFromDB('train_images');
     let index = 0;
     for (const image of arrays) {
+      const tags = JSON.parse(image.tags)
       this.allImages.push({
+        name: image.name,
         index: index,
-        url: image.content.base64,
-        tag: [],
-        searchTag: this.createTags([image.content.keyword]),
-        projectTag: this.createTags(image.content.tags),
+        url: image.base64,
+        tag: tags,
+        searchTag: this.createTags([image.keyword]),
+        projectTag: this.createTags(image.projecttags),
       });
       index++;
     }

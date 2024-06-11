@@ -1,4 +1,7 @@
 <template>
+  <div id="liveAlertPlaceholder" class="container-fluid align-self-center align-content-center"
+       style="position: absolute;z-index: 9999;">
+  </div>
   <ConceptInputModal/>
   <ConceptSelectModal/>
   <router-view/>
@@ -30,11 +33,6 @@ export default {
     addConcept() {
       emitter.emit(conceptModalOpenEvent, 'progress');
     }
-  },
-  created() {
-    this.$cookies.config(OneDay, '/')
-    this.$cookies.set('page', 1, OneDay, '/')
-    this.$cookies.set('projectCount', 0, OneDay, '/')
   }
 }
 </script>

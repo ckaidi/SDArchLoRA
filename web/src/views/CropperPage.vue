@@ -96,45 +96,45 @@ export default {
     nextStep() {
       document.createElement('a');
       // 输出
-      this.$refs.cropper.getCropData((data) => {
+      this.$refs.cropper.getCropData(async (data) => {
         let document_id = this.$route.query.document_id;
-        loadSingleDataFromDB('projects', 'name', document_id, (project) => {
-          let imgData = {base64: data}
-          imgData.tags = []
-          if (project.content.author !== "") {
-            imgData.tags.push(project.content.author);
+        const project = await loadSingleDataFromDB('projects', 'name', document_id);
+        let imgData = {name: this.$route.query.imgName, base64: data}
+        imgData.projecttags = []
+        imgData.tags = '[]'
+        if (project.content.author !== "") {
+          imgData.projecttags.push(project.content.author);
+        }
+        if (project.content.categories !== "") {
+          let tags = project.content.categories.split(',')
+          for (const tagsKey of tags) {
+            if (tagsKey !== "")
+              imgData.projecttags.push(tagsKey);
           }
-          if (project.content.categories !== "") {
-            let tags = project.content.categories.split(',')
-            for (const tagsKey of tags) {
-              if (tagsKey !== "")
-                imgData.tags.push(tagsKey);
-            }
+        }
+        if (project.content.location !== "") {
+          imgData.projecttags.push(project.content.location);
+        }
+        if (project.content.meta_description !== "") {
+          imgData.projecttags.push(project.content.meta_description);
+        }
+        if (project.content.offices !== "") {
+          let tags = project.content.offices.split(',')
+          for (const tagsKey of tags) {
+            if (tagsKey !== "")
+              imgData.projecttags.push(tagsKey);
           }
-          if (project.content.location !== "") {
-            imgData.tags.push(project.content.location);
+        }
+        if (project.content.tags !== "") {
+          let tags = project.content.tags.split(',')
+          for (const tagsKey of tags) {
+            if (tagsKey !== "")
+              imgData.projecttags.push(tagsKey);
           }
-          if (project.content.meta_description !== "") {
-            imgData.tags.push(project.content.meta_description);
-          }
-          if (project.content.offices !== "") {
-            let tags = project.content.offices.split(',')
-            for (const tagsKey of tags) {
-              if (tagsKey !== "")
-                imgData.tags.push(tagsKey);
-            }
-          }
-          if (project.content.tags !== "") {
-            let tags = project.content.tags.split(',')
-            for (const tagsKey of tags) {
-              if (tagsKey !== "")
-                imgData.tags.push(tagsKey);
-            }
-          }
-          imgData.keyword = sessionStorage.getItem('keyword');
-          saveTaggerImageToDB(this.$route.query.imgName, imgData)
-          window.location = '#/img2img'
-        });
+        }
+        imgData.keyword = sessionStorage.getItem('keyword');
+        await saveTaggerImageToDB(this.$route.query.imgName, imgData)
+        window.location = '#/img2img'
       })
     }
     ,

@@ -19,12 +19,58 @@ export const conceptModalOpenEvent = 'conceptModalOpenEvent'
 export const conceptModalCloseEvent = 'conceptModalCloseEvent'
 export const selectModalOpenEvent = 'selectModalOpenEvent'
 
+const db = await openDataBase('concepts', (db_temp) => {
+    // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
+    if (!db_temp.objectStoreNames.contains('concepts')) {
+        // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
+        db_temp.createObjectStore('concepts', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+    }
+});
+
 export const emitter = mitt()
 const instance = createApp(App)
 instance.use(router)
 instance.use(VueCookies)
 instance.use(VueCropper)
 instance.mount('#app')// 实现一个 once 功能
+
+//生成随机字符
+const _charStr = 'abacdefghjklmnopqrstuvwxyzABCDEFGHJKLMNOPQRSTUVWXYZ0123456789';
+const alertPlaceholder = document.getElementById('liveAlertPlaceholder')
+
+/**
+ * 随机生成索引
+ * @param min 最小值
+ * @param max 最大值
+ * @param i 当前获取位置
+ */
+function RandomIndex(min, max, i) {
+    let index = Math.floor(Math.random() * (max - min + 1) + min),
+        numStart = _charStr.length - 10;
+    //如果字符串第一位是数字，则递归重新获取
+    if (i === 0 && index >= numStart) {
+        index = RandomIndex(min, max, i);
+    }
+    //返回最终索引值
+    return index;
+}
+
+/**
+ * 随机生成字符串
+ * @param len 指定生成字符串长度
+ */
+function getRandomString(len) {
+    let min = 0, max = _charStr.length - 1, _str = '';
+    //判断是否指定长度，否则默认长度为15
+    len = len || 15;
+    //循环生成字符串
+    let i = 0, index;
+    for (; i < len; i++) {
+        index = RandomIndex(min, max, i);
+        _str += _charStr[index];
+    }
+    return _str;
+}
 
 function once(event, handler) {
     const wrappedHandler = (eventData) => {
@@ -61,6 +107,42 @@ function searchCore(ws, onReceiveImg) {
     };
 }
 
+// 弹出提示
+export const appendAlert = (message, type) => {
+    const wrapper = document.createElement('div')
+    let uniqueId = getRandomString(20)
+    wrapper.innerHTML = [
+        `<div class="alert alert-${type} alert-dismissible show" role="alert">`,
+        `   <div>${message}</div>`,
+        `   <button id="${uniqueId}" type="button" class="btn-close alert-btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="whenClose()" "></button>`,
+        '</div>'
+    ].join('')
+    let messageCount = sessionStorage.getItem("messageCount")
+    let count = parseInt(messageCount)
+    if (messageCount >= 3) {
+        let eles = document.getElementsByClassName('alert-btn-close')
+        eles.item(0).click()
+    }
+    const g = document.createElement('script');
+    const s = document.getElementsByTagName('script')[0];
+    g.text = 'function whenClose(){' +
+        'let messageCount = sessionStorage.getItem("messageCount");' +
+        'let count=parseInt(messageCount);' +
+        'count--;' +
+        'sessionStorage.setItem("messageCount", count.toString());' +
+        '}'
+    s.parentNode.insertBefore(g, s);
+    alertPlaceholder.append(wrapper)
+    count++
+    sessionStorage.setItem("messageCount", count.toString())
+    setTimeout(() => {
+        let button = document.getElementById(uniqueId)
+        if (button !== null) {
+            button.click()
+        }
+    }, 3000)
+}
+
 // 向后端发送请求，爬取archidaily
 export function searchArchDaily(keyword, onReceiveImg) {
     // 创建一个 WebSocket 对象，连接到本地的 8080 端口
@@ -70,171 +152,217 @@ export function searchArchDaily(keyword, onReceiveImg) {
     }
 }
 
-export function continueSearchArchDaily(keyword, onReceiveImg) {
+export async function continueSearchArchDaily(keyword, onReceiveImg) {
+    await updateConceptItem('searches', keyword, 'date', Date.now())
     const that = instance
     // 创建一个 WebSocket 对象，连接到本地的 8080 端口
     if (keyword !== "") {
-        const count = that.$cookies.get('projectCount')
-        const page = that.$cookies.get('page')
-        const ws = new WebSocket("ws://127.0.0。1:8081/archdaily?" + "keyword=" + keyword + "&page=" + page + "&projectCount=" + count);
+        const searchesKeywords = await loadConceptDataFromDB('searches')
+        if (searchesKeywords === null || searchesKeywords.length === 0) {
+            resolve(null)
+        }
+        try {
+            let key = '';
+            for (const item of searchesKeywords) {
+                if (item.name === keyword) {
+                    key = item;
+                    break
+                }
+            }
+            if (key === '') {
+                messagesShow('错误', '服务器出现错误,请稍候再试');
+            }
+            const count = key.project_count;
+            const page = key.page_count;
+            const ws = new WebSocket("ws://127.0.0。1:8081/archdaily?" + "keyword=" + keyword + "&page=" + page + "&projectCount=" + count);
 
-        searchCore(ws, onReceiveImg);
+            searchCore(ws, onReceiveImg);
+        } catch (e) {
+        }
     }
 }
 
 // 检查所给的的数据是否在数据库中
 export function checkDataInDB(dbName, storeName, indexValue) {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(dbName);
-
-        // 如果数据库需要升级（即首次打开或版本增加），则会调用此事件处理函数
-        request.onupgradeneeded = (e) => {
-            // 获取数据库实例
-            const db = e.target.result;
-            // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
-            if (!db.objectStoreNames.contains(storeName)) {
-                // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
-                db.createObjectStore(storeName, {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
-            }
+    return new Promise(async (resolve, reject) => {
+        const db = await openDataBase(dbName, (db_temp) => {
+            // 关闭新创建的数据库
+            event.target.result.close();
+            // 删除新创建的数据库
+            indexedDB.deleteDatabase(dbName);
             resolve('')
+        });
+
+        const transaction = db.transaction([storeName], 'readonly');
+        const store = transaction.objectStore(storeName);
+        const index = store.index('nameIndex');  // 假设索引名为'nameIndex'
+        const getRequest = index.get(indexValue);
+
+        getRequest.onsuccess = () => {
+            if (getRequest.result) {
+                console.log('Item exists:', getRequest.result);
+                resolve(true);  // 存在时返回true
+            } else {
+                console.log('Item does not exist.');
+                resolve(false);  // 不存在时返回false
+            }
         };
 
-        request.onsuccess = (event) => {
-            const db = event.target.result;
-            const transaction = db.transaction([storeName], 'readonly');
-            const store = transaction.objectStore(storeName);
-            const index = store.index('nameIndex');  // 假设索引名为'nameIndex'
-            const getRequest = index.get(indexValue);
-
-            getRequest.onsuccess = () => {
-                if (getRequest.result) {
-                    console.log('Item exists:', getRequest.result);
-                    resolve(true);  // 存在时返回true
-                } else {
-                    console.log('Item does not exist.');
-                    resolve(false);  // 不存在时返回false
-                }
-            };
-
-            getRequest.onerror = (event) => {
-                console.error('Error in fetching item:', event.target.errorCode);
-                reject(new Error('Error in fetching item'));
-            };
-        };
-
-        request.onerror = (event) => {
-            console.error('Error in opening database:', event.target.errorCode);
-            reject(new Error('Error in opening database'));
+        getRequest.onerror = (event) => {
+            console.error('Error in fetching item:', event.target.errorCode);
+            reject(new Error('Error in fetching item'));
         };
     });
 }
 
 
 // 保存数据到前端数据库
-export function saveDataToDB(tableName, key, buffer) {
-    // 打开一个名为imageDB的数据库，版本号为1
-    const request = indexedDB.open(tableName, 1);
-
-    // 如果数据库需要升级（即首次打开或版本增加），则会调用此事件处理函数
-    request.onupgradeneeded = (e) => {
-        // 获取数据库实例
-        const db = e.target.result;
+export async function saveConceptsToDB(key, buffer) {
+    const db = await openDataBase('concepts', (db_temp) => {
         // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
-        if (!db.objectStoreNames.contains(tableName)) {
+        if (!db_temp.objectStoreNames.contains('concepts')) {
             // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
-            db.createObjectStore(tableName, {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+            db_temp.createObjectStore('concepts', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
         }
+    });
+
+    // 创建一个读写事务，目标对象存储空间为images
+    const transaction = db.transaction(['concepts'], "readwrite");
+    // 获取对象存储空间
+    const store = transaction.objectStore('concepts');
+    // 向对象存储空间中添加或更新一条记录
+    // const imgRequest = store.put(buffer);
+    const imgRequest = store.put({name: key, content: buffer});
+
+    imgRequest.onsuccess = () => {
+        console.log("Image saved successfully!");
     };
 
-    // 当成功打开数据库时，执行此回调函数
-    request.onsuccess = (e) => {
-        // 获取数据库实例
-        const db = e.target.result;
-        // 创建一个读写事务，目标对象存储空间为images
-        const transaction = db.transaction([tableName], "readwrite");
-        // 获取对象存储空间
-        const store = transaction.objectStore(tableName);
-        // 向对象存储空间中添加或更新一条记录
-        // const imgRequest = store.put(buffer);
-        const imgRequest = store.put({name: key, content: buffer});
-
-        imgRequest.onsuccess = () => {
-            console.log("Image saved successfully!");
-        };
-
-        imgRequest.onerror = (e) => {
-            console.error("Error saving the image:", e.target.error);
-        };
+    imgRequest.onerror = (e) => {
+        console.error("Error saving the image:", e.target.error);
     };
 
-    request.onerror = (e) => {
-        console.error("Error opening database:", e.target.error);
-    };
-}
-
-export function saveProjectInfoToDB(name, buffer) {
-    saveDataToDB("projects", name, buffer)
-}
-
-export function saveTaggerImageToDB(name, buffer) {
-    saveDataToDB("images", name, buffer)
-}
-
-// 保存爬取的图片
-export function saveSpiderDataToDB(name, buffer) {
-    const keyword = sessionStorage.getItem('keyword')
-    saveDataToDB(keyword, name, buffer)
-}
-
-export function loadConceptDataFromDB(tableName) {
-    return loadDataFromDB(tableName, tableName);
-}
-
-export function loadDataFromDB(dbname, tableName) {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(dbname, 1);
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(tableName)) {
-                db.createObjectStore(tableName, {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
-            }
-        };
-
-        request.onsuccess = (event) => {
-            const db = event.target.result;
-            const transaction = db.transaction([tableName], 'readonly');
-            const store = transaction.objectStore(tableName);
-            const cursorRequest = store.openCursor();
-            let array = [];
-            cursorRequest.onsuccess = (e) => {
-                const cursor = e.target.result;
-                if (cursor) {
-                    array.push(cursor.value);
-                    cursor.continue();
-                } else {
-                    resolve(array);
-                }
-            };
-
-            cursorRequest.onerror = (e) => console.error('Error fetching data from IndexedDB:', e.target.error);
-        };
-
-        request.onerror = (event) => {
-            console.error('Database error:', event.target.error);
-            resolve([])
-        };
+    await openDataBase(key, (db_temp) => {
+        // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
+        if (!db_temp.objectStoreNames.contains('searches')) {
+            db_temp.createObjectStore('searches', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+        }
+        if (!db_temp.objectStoreNames.contains('images')) {
+            db_temp.createObjectStore('images', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+        }
+        if (!db_temp.objectStoreNames.contains('train_images')) {
+            db_temp.createObjectStore('train_images', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+        }
+        if (!db_temp.objectStoreNames.contains('user_tags')) {
+            db_temp.createObjectStore('user_tags', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+        }
     });
 }
 
-export function loadSingleDataFromDB(dbname, keyPathName, key, callback) {
-    const request = indexedDB.open(dbname, 1);
+// 保存数据到概念数据库
+export async function saveDataToConceptToDB(tableName, key, buffer) {
+    const concept = sessionStorage.getItem('concept')
+    const db = await openDataBase(concept);
 
-    request.onerror = (event) => {
-        console.error('Database error:', event.target.error);
+    // 创建一个读写事务，目标对象存储空间为images
+    const transaction = db.transaction([tableName], "readwrite");
+    // 获取对象存储空间
+    const store = transaction.objectStore(tableName);
+    // 向对象存储空间中添加或更新一条记录
+    // const imgRequest = store.put(buffer);
+    const imgRequest = store.put(buffer);
+
+    imgRequest.onsuccess = () => {
+        console.log("Image saved successfully!");
     };
 
-    request.onsuccess = (event) => {
-        const db = event.target.result;
+    imgRequest.onerror = (e) => {
+        console.error("Error saving the image:", e.target.error);
+    };
+}
+
+export async function saveProjectInfoToDB(key, buffer) {
+    const db = await openDataBase('projects', (db_temp) => {
+        // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
+        if (!db_temp.objectStoreNames.contains('projects')) {
+            // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
+            db_temp.createObjectStore('projects', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+        }
+    });
+
+    // 创建一个读写事务，目标对象存储空间为images
+    const transaction = db.transaction(['projects'], "readwrite");
+    // 获取对象存储空间
+    const store = transaction.objectStore('projects');
+    // 向对象存储空间中添加或更新一条记录
+    // const imgRequest = store.put(buffer);
+    const imgRequest = store.put({name: key, content: buffer});
+
+    imgRequest.onsuccess = () => {
+        console.log("Image saved successfully!");
+    };
+
+    imgRequest.onerror = (e) => {
+        console.error("Error saving the image:", e.target.error);
+    };
+}
+
+
+export async function saveTaggerImageToDB(name, buffer) {
+    await saveDataToConceptToDB("train_images", name, buffer)
+}
+
+export function loadConceptDataFromDB(tableName) {
+    const concept = sessionStorage.getItem('concept')
+    return loadDataFromDB(concept, tableName);
+}
+
+export function loadDataFromDB(dbname, tableName) {
+    return new Promise(async (resolve, reject) => {
+        if (dbname === null) {
+            resolve([])
+            return
+        }
+
+        const db = await openDataBase(dbname, (db_temp) => {
+            // 关闭新创建的数据库
+            event.target.result.close();
+            // 删除新创建的数据库
+            indexedDB.deleteDatabase(dbname);
+            resolve([]);
+        });
+        if (!db) {
+            resolve([]);
+            return;
+        }
+
+        const transaction = db.transaction([tableName], 'readonly');
+        const store = transaction.objectStore(tableName);
+        const cursorRequest = store.openCursor();
+        let array = [];
+        cursorRequest.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+                array.push(cursor.value);
+                cursor.continue();
+            } else {
+                resolve(array);
+            }
+        };
+
+        cursorRequest.onerror = (e) => console.error('Error fetching data from IndexedDB:', e.target.error);
+    });
+}
+
+export function loadSingleDataFromDB(dbname, keyPathName, key) {
+    return new Promise(async (resolve, reject) => {
+        const db = await openDataBase(dbname, (db_temp) => {
+            // 关闭新创建的数据库
+            event.target.result.close();
+            // 删除新创建的数据库
+            indexedDB.deleteDatabase(dbname);
+            resolve(undefined);
+        });
         const transaction = db.transaction([dbname], "readonly");
         const store = transaction.objectStore(dbname);
         const index = store.index(keyPathName + "Index"); // 假设索引名为"nameIndex"
@@ -242,56 +370,19 @@ export function loadSingleDataFromDB(dbname, keyPathName, key, callback) {
 
         getRequest.onerror = (event) => {
             console.error('Error fetching data:', event.target.error);
-            callback(undefined)
+            resolve(undefined)
         };
 
         getRequest.onsuccess = (event) => {
             const projectData = getRequest.result;
-            callback(projectData)
+            resolve(projectData)
         };
 
         getRequest.onupgradeneeded = (event) => {
             const db = event.target.result;
             db.createObjectStore(dbname, {keyPath: keyPathName});
         };
-    };
-}
-
-// 清空指定的对象存储空间
-export function clearObjectStore(dbName, storeName) {
-    // const dbName = "imagesDB";  // 数据库名称
-    // const storeName = "images"; // 对象存储空间名称
-
-    // 打开数据库
-    const request = indexedDB.open(dbName);
-
-    request.onsuccess = (e) => {
-        const db = e.target.result;
-        // 检查对象存储空间是否存在
-        if (!db.objectStoreNames.contains(storeName)) {
-            db.close(); // 关闭数据库连接
-            return;
-        }
-
-        // 创建读写事务
-        const transaction = db.transaction([storeName], "readwrite");
-        // 获取对象存储空间
-        const store = transaction.objectStore(storeName);
-        // 清空对象存储空间
-        const clearRequest = store.clear();
-
-        clearRequest.onsuccess = () => {
-            console.log(`${storeName} store cleared successfully`);
-        };
-
-        clearRequest.onerror = (e) => {
-            console.error(`Error clearing object store: ${e.target.errorCode}`);
-        };
-    };
-
-    request.onerror = (e) => {
-        console.error(`Error opening database: ${e.target.errorCode}`);
-    };
+    });
 }
 
 // 生成客户端随机id
@@ -302,17 +393,12 @@ export function createClientId() {
 }
 
 export async function addConcept(concept) {
-
-    const dbName = 'concepts';
-    const storeName = 'concepts';
-
-
     const isExist = await checkDataInDB("concepts", "concepts", "nameIndex", concept)
     if (isExist) {
         emitter.emit(conceptModalOpenEvent);
     } else {
         sessionStorage.setItem('concept', concept)
-        saveDataToDB('concepts', concept, concept)
+        await saveConceptsToDB(concept, concept)
         emitter.emit(conceptModalCloseEvent, concept);
     }
 }
@@ -324,9 +410,16 @@ export function messagesShow(title, message) {
 
 // 获取训练概念
 export function getConcept() {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         const concept = sessionStorage.getItem('concept');
         if (concept === null) {
+            const concepts = await loadDataFromDB('concepts', 'concepts')
+            if (concepts !== null && concepts !== undefined && concepts.length > 0) {
+                sessionStorage.setItem('concept', concepts[0].content);
+                resolve(concepts[0].content);
+                return;
+            }
+
             // 注册事件监听器，用于在模态对话框关闭后处理
             once(conceptModalCloseEvent, (userInput) => {
                 // 用户输入或从对话框获取的信息作为结果返回
@@ -339,5 +432,95 @@ export function getConcept() {
             // 如果已有concept则直接返回
             resolve(concept);
         }
+    });
+}
+
+// 更新物体
+export async function updateConceptItem(tableName, key, field, newValue) {
+    let concept = sessionStorage.getItem('concept');
+    const db = await openDataBase(concept, (db_temp) => {
+        // 关闭新创建的数据库
+        event.target.result.close();
+        // 删除新创建的数据库
+        indexedDB.deleteDatabase(concept);
+    });
+    if (!db) {
+        return;
+    }
+
+    const transaction = db.transaction([tableName], 'readwrite'); // 创建读写事务
+    const store = transaction.objectStore(tableName);
+
+    const itemRequest = store.get(key); // 假设 'a' 是你想要修改的项的键
+
+    itemRequest.onsuccess = () => {
+        const data = itemRequest.result;
+        if (data) {
+            // 修改page字段
+
+            data[field] = newValue;
+            const updateRequest = store.put(data); // 将修改后的对象写回数据库
+
+            updateRequest.onsuccess = () => {
+                console.log('Item updated successfully');
+            };
+
+            updateRequest.onerror = (event) => {
+                console.error('Error updating item:', event.target.error);
+            };
+        } else {
+            console.warn('Item not found');
+        }
+    };
+
+    itemRequest.onerror = (event) => {
+        console.error('Error fetching item:', event.target.error);
+    };
+}
+
+// 获取训练关键字
+export async function getKeyword() {
+    return new Promise(async (resolve, reject) => {
+        let keyword = sessionStorage.getItem('keyword')
+        if (keyword !== null) {
+            resolve(keyword)
+        }
+        const searchesKeywords = await loadConceptDataFromDB('searches')
+        if (searchesKeywords === null || searchesKeywords.length === 0) {
+            resolve(null)
+        }
+        try {
+            const maxDateItem = searchesKeywords.reduce((max, item) => {
+                return new Date(item.date) > new Date(max.date) ? item : max;
+            });
+            sessionStorage.setItem('keyword', maxDateItem.name)
+            resolve(maxDateItem.name)
+        } catch (e) {
+            resolve(null)
+        }
+    });
+}
+
+// 所有方法都从这打开数据库
+function openDataBase(dbname, createTable) {
+    return new Promise(async (resolve, reject) => {
+        const request = indexedDB.open(dbname);
+
+        // 如果数据库需要升级（即首次打开或版本增加），则会调用此事件处理函数
+        request.onupgradeneeded = (e) => {
+            // 获取数据库实例
+            const db = e.target.result;
+            // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
+            createTable(db);
+        };
+
+        request.onsuccess = (event) => {
+            const db = event.target.result;
+            resolve(db);
+        };
+
+        request.onerror = (event) => {
+            resolve(null)
+        };
     });
 }

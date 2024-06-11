@@ -9,23 +9,33 @@
   </div>
 </template>
 <script>
-import {continueSearchArchDaily, searchArchDaily} from "@/main.js";
+import {continueSearchArchDaily, getConcept, getKeyword, saveDataToConceptToDB, searchArchDaily} from "@/main.js";
 
 export default {
   methods: {
     search() {
       sessionStorage.setItem('keyword', this.keyword)
+      saveDataToConceptToDB('searches', this.keyword, {
+        name: this.keyword,
+        page_count: 1,
+        project_count: 0,
+        date: Date.now()
+      })
       searchArchDaily(this.keyword, this.onReceiveImg)
     },
     showMore() {
+      if (this.keyword === '') {
+        this.keyword = sessionStorage.getItem('keyword');
+      }
       continueSearchArchDaily(this.keyword, this.onReceiveImg)
     },
   },
   props: {
     onReceiveImg: null
   },
-  created() {
-    const keyword = sessionStorage.getItem('keyword');
+  async beforeCreate() {
+    // await getConcept();
+    const keyword = await getKeyword();
     if (keyword !== null) {
       this.keyword = keyword;
     }
