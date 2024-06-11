@@ -11,6 +11,7 @@ import VueCookies from 'vue-cookies'
 import VueCropper from 'vue-cropper';
 import router from "@/router/index.js";
 import * as bootstrap from 'bootstrap';
+import JSZip from 'jszip';
 
 window.bootstrap = bootstrap;
 export const OneDay = 60 * 60 * 24
@@ -540,5 +541,68 @@ function openDataBase(dbname, createTable) {
         request.onerror = (event) => {
             resolve(null)
         };
+    });
+}
+
+export function downloadTextFile(text, filename) {
+    // 创建一个Blob对象，它包含要下载的数据
+    const blob = new Blob([text], {type: 'text/plain'});
+
+    // 创建一个链接元素
+    const a = document.createElement('a');
+
+    // 创建Blob的URL
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = filename;
+
+    // 添加链接元素到DOM（不可见），并触发点击事件
+    document.body.appendChild(a);
+    a.click();
+
+    // 清理操作：删除添加的元素，释放Blob URL
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function base64ToBlob(base64, mimeType) {
+    // Base64字符串解码
+    let bytes = atob(base64.split(',')[1]);
+    // 处理异常,将ascii码小于0的转换为大于0
+    let ab = new ArrayBuffer(bytes.length);
+    let ia = new Uint8Array(ab);
+    for (let i = 0; i < bytes.length; i++) {
+        ia[i] = bytes.charCodeAt(i);
+    }
+    return new Blob([ab], {type: mimeType});
+}
+
+// 下载文件到zip
+export async function downloadMultipleFilesAsZip(allImages) {
+    const zip = new JSZip();
+    const folder = zip.folder('50_' + await getConcept());  // 创建一个文件夹
+
+    let index = 0;
+    for (const image of allImages) {
+        let tagText = "";
+        for (const tag of image.tag) {
+            tagText += tag.tag + ','
+        }
+        // 添加文件到ZIP
+        zip.file(index + '.txt', tagText);
+        zip.file(index + '.jpeg', base64ToBlob(image.url, 'jpeg'), {base64: true});
+    }
+
+    // 生成ZIP并触发下载
+    zip.generateAsync({type: 'blob'}).then(function (content) {
+        // 使用类似前面提到的下载方法
+        const a = document.createElement('a');
+        const url = URL.createObjectURL(content);
+        a.href = url;
+        a.download = 'MyFiles.zip'; // 设置下载的文件名
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     });
 }

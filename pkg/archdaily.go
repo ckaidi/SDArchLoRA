@@ -166,6 +166,7 @@ func analyseProject(conn *websocket.Conn, project ResultDetail, allCount *int) {
 		reader.Find("img.gallery-thumbs-img").Each(func(i int, selection *goquery.Selection) {
 			fmt.Print(selection.Text())
 			imageUrl := selection.AttrOr("src", "")
+			//imageUrl = strings.Replace(imageUrl, "medium_jpg", "small_jpg", 1)
 			title := selection.AttrOr("alt", "标题")
 			if imageUrl != "" {
 				lastText := strings.Split(imageUrl, "/")

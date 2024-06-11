@@ -96,7 +96,7 @@ import {defineComponent} from "vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
 import {
   appendAlert,
-  createClientId, deleteConceptItem, loadConceptDataFromDB,
+  createClientId, deleteConceptItem, downloadMultipleFilesAsZip, downloadTextFile, loadConceptDataFromDB,
   saveDataToConceptToDB, updateConceptItem
 } from "@/main.js";
 import {sdServer} from "@/sdApi.js";
@@ -228,36 +228,7 @@ export default defineComponent({
     },
     // 导出训练数据
     exportTrainData() {
-      let jsonData = {
-        images: []
-      }
-      for (const image of this.allImages) {
-        let tagText = "";
-        let temp = {
-          index: image.index,
-          base64: image.url,
-          tags: [],
-        };
-        for (const tag of image.tag) {
-          // temp.tags.push({
-          //   key: tag.key,
-          //   tag: tag.tag,
-          //   tagType: tag.tagType,
-          // });
-          tagText += tag.tag + ','
-        }
-        jsonData.images.push(temp);
-      }
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', sdServer + '/traindata', true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.onload = function () {
-        if (xhr.status === 200) {
-        } else {
-          alert('网络错误，请重试')
-        }
-      };
-      xhr.send(jsonData);
+      downloadMultipleFilesAsZip(this.allImages);
     },
   },
   data() {
