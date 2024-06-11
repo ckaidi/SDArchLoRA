@@ -90,7 +90,8 @@ export default {
           name: jsonData.name,
           keyword: [sessionStorage.getItem('keyword')],
           url: jsonData.url,
-          document_id: jsonData.document_id
+          document_id: jsonData.document_id,
+          date: Date.now()
         });
         this.list.push({
           keyword: [sessionStorage.getItem('keyword')],
@@ -110,6 +111,9 @@ export default {
     let keyword = await getKeyword();
     if (keyword !== null && keyword !== undefined) {
       const arrays = await loadConceptDataFromDB('images');
+      arrays.sort((item1, item2) => {
+        return item1.date - item2.date;  // 升序排序
+      });
       for (const image of arrays) {
         if (image.url === undefined) continue;
         if (!image.keyword.includes(keyword)) continue;
