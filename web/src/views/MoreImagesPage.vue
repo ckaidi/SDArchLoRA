@@ -45,7 +45,6 @@ import SearchComponent from "@/components/SearchComponent.vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
 import {LazyImg, Waterfall} from "vue-waterfall-plugin-next";
 import {
-  OneDay,
   getConcept,
   createClientId,
   saveProjectInfoToDB,
@@ -112,7 +111,7 @@ export default {
     if (keyword !== null && keyword !== undefined) {
       const arrays = await loadConceptDataFromDB('images');
       arrays.sort((item1, item2) => {
-        return item1.date - item2.date;  // 升序排序
+        return item1.date - item2.date;
       });
       for (const image of arrays) {
         if (image.url === undefined) continue;

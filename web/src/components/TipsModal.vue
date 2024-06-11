@@ -7,15 +7,18 @@
           <h1 class="modal-title fs-5" id="staticBackdropLabel">{{ modelTitle }}</h1>
         </div>
         <div class="modal-body">
-          <form>
-            <input type="text" class="form-control" id="message-text" placeholder="lora概念">
-          </form>
+          {{ message }}
         </div>
         <div class="modal-footer">
+          <button type="button" class="btn btn-danger"
+                  @click="addConcept()" data-bs-dismiss="modal"
+                  id="staticBackdropButton">
+            取消
+          </button>
           <button type="button" class="btn btn-primary"
                   @click="addConcept()" data-bs-dismiss="modal"
                   id="staticBackdropButton">
-            {{ buttonContent }}
+            确定
           </button>
         </div>
       </div>

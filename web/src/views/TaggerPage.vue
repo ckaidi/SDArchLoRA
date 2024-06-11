@@ -22,7 +22,7 @@
             <span class="vr mx-2"></span>
             <a @click="deleteSelectTag(tag)">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                   class="bi bi-x-circle-fill" :class="tag.svgColor" viewBox="0 0 16 16">
+                   class="bi bi-x-circle-fill" :class="tag.tag" viewBox="0 0 16 16">
                 <path
                     d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
               </svg>
@@ -67,7 +67,7 @@
             <span class="vr mx-2"></span>
             <a @click="selectTag(tag,false)">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                   class="bi bi-x-circle-fill" :class="tag.svgColor" viewBox="0 0 16 16">
+                   class="bi bi-x-circle-fill" :class="tag.tag" viewBox="0 0 16 16">
                 <path
                     d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
               </svg>
@@ -94,41 +94,47 @@
 <script>
 import {defineComponent} from "vue";
 import NavigationComponent from "@/components/NavigationComponent.vue";
-import {appendAlert, createClientId, loadConceptDataFromDB, saveDataToConceptToDB, updateConceptItem} from "@/main.js";
+import {
+  appendAlert,
+  createClientId, deleteConceptItem, loadConceptDataFromDB,
+  saveDataToConceptToDB, updateConceptItem
+} from "@/main.js";
 import {sdServer} from "@/sdApi.js";
 
 export default defineComponent({
   components: {NavigationComponent},
   methods: {
-    badgeColor() {
-      let rand = Math.floor(Math.random() * 7);
-      switch (rand) {
-        case 0:
-          return ["bg-primary-subtle text-primary-emphasis border-primary-subtle", "text-primary"]
-        case 1:
-          return ["bg-secondary-subtle text-secondary-emphasis border-secondary-subtle", "text-secondary"]
-        case 2:
-          return ["bg-success-subtle text-success-emphasis border-success-subtle", "text-success"]
-        case 3:
-          return ["bg-danger-subtle text-danger-emphasis border-danger-subtle", "text-danger"]
-        case 4:
-          return ["bg-warning-subtle text-warning-emphasis border-warning-subtle", "text-warning"]
-        case 5:
-          return ["bg-info-subtle text-info-emphasis border-info-subtle", "text-info"]
-        case 6:
-          return ["bg-dark-subtle text-dark-emphasis border-dark-subtle", "text-dark"]
-      }
-    },
     isActive(index, path) {
       if (this.selectImg === "") {
         return index === 0
       }
       return path === this.selectImg.url
     },
-    smallSelected(item) {
+    colorTag(item) {
+      for (const tag of item.tag) {
+        for (let i = 0; i < this.allTaggers.length; i++) {
+          if (this.allTaggers[i].tag === tag.tag) {
+            this.allTaggers[i].color = 'text-bg-primary';
+          }
+        }
+        for (let i = 0; i < this.selectImg.projectTag.length; i++) {
+          if (this.selectImg.projectTag[i].tag === tag.tag) {
+            this.selectImg.projectTag[i].color = 'text-bg-primary';
+          }
+        }
+        for (let i = 0; i < this.selectImg.searchTag.length; i++) {
+          if (this.selectImg.searchTag[i].tag === tag.tag) {
+            this.selectImg.searchTag[i].color = 'text-bg-primary';
+          }
+        }
+      }
+    },
+    async smallSelected(item) {
       this.selectImg = item;
+      this.colorTag(item);
     },
     async selectTag(tag, flag) {
+      tag.color = 'text-bg-primary';
       if (flag) {
         if (this.selectImg !== '') {
           const foundElement = this.selectImg.tag.find(element => element === tag);
@@ -137,32 +143,55 @@ export default defineComponent({
           const foundElement4 = this.selectImg.searchTag.find(element => element === tag);
           if (foundElement === undefined && (foundElement2 !== undefined || foundElement3 !== undefined || foundElement4 !== undefined)) {
             this.selectImg.tag.push(tag)
-            await updateConceptItem('train_images', this.selectImg.name, 'tags', JSON.stringify(this.selectImg.tag))
+            await updateConceptItem('train_images', this.selectImg.name, 'tags', JSON.stringify(this.selectImg.tag));
+            if (foundElement2 !== undefined) {
+              foundElement2.used += 1;
+              await updateConceptItem('user_tags', foundElement2.tag,
+                  'used', foundElement2.used);
+            }
           }
         }
       } else {
-        this.deleteTag(tag);
+        await this.deleteTag(tag);
       }
     },
-    deleteSelectTag(tag) {
+    async deleteSelectTag(tag) {
       if (this.selectImg !== '') {
         this.selectImg.tag = this.selectImg.tag.filter(element => element.tag !== tag.tag);
+        await updateConceptItem('train_images', this.selectImg.name, 'tags', JSON.stringify(this.selectImg.tag));
+        for (let i = 0; i < this.allTaggers.length; i++) {
+          if (this.allTaggers[i].tag === tag.tag) {
+            this.allTaggers[i].color = 'text-bg-secondary';
+            this.allTaggers[i].used--;
+            await updateConceptItem('user_tags', tag.tag, 'used', this.allTaggers[i].used);
+            break;
+          }
+        }
+        for (let i = 0; i < this.selectImg.projectTag.length; i++) {
+          if (this.selectImg.projectTag[i].tag === tag.tag) {
+            this.selectImg.projectTag[i].color = 'text-bg-secondary';
+            break;
+          }
+        }
       }
     },
-    deleteTag(tag) {
+    async deleteTag(tag) {
+      for (const images of this.allImages) {
+        images.tag = images.tag.filter(element => element.tag !== tag.tag);
+      }
       if (this.allTaggers !== '') {
         this.allTaggers = this.allTaggers.filter(element => element.tag !== tag.tag);
+        await deleteConceptItem('user_tags', tag.name)
+        await updateConceptItem('train_images', this.selectImg.name, 'tags', JSON.stringify(this.selectImg.tag));
       }
     },
     createTags(strArray) {
       let result = [];
       for (const strArrayElement of strArray) {
-        let colors = this.badgeColor()
         result.push({
           key: "archdaily",
           tag: strArrayElement,
-          color: colors[0],
-          svgColor: colors[1],
+          color: 'text-bg-secondary',
           tagType: "archdaily"
         })
       }
@@ -179,14 +208,13 @@ export default defineComponent({
       if (this.userInput !== undefined && this.userInput !== null && this.userInput !== "") {
         const foundElement2 = this.allTaggers.find(element => element.tag === this.userInput);
         if (foundElement2 === undefined || foundElement2 === null) {
-          let colors = this.badgeColor();
           let d = {
             name: this.userInput,
             key: "archdaily",
             tag: this.userInput,
-            color: colors[0],
-            svgColor: colors[1],
-            tagType: "archdaily"
+            color: 'text-bg-secondary',
+            tagType: "archdaily",
+            used: 0,
           }
           this.allTaggers.push(d);
           saveDataToConceptToDB('user_tags', this.userInput, d)
@@ -221,7 +249,6 @@ export default defineComponent({
         jsonData.images.push(temp);
       }
       const xhr = new XMLHttpRequest();
-      const that = this
       xhr.open('POST', sdServer + '/traindata', true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.onload = function () {
@@ -245,8 +272,6 @@ export default defineComponent({
   // 检查是否有图片
   async beforeCreate() {
     this.allTaggers = await loadConceptDataFromDB('user_tags');
-  },
-  async created() {
     createClientId();
     const arrays = await loadConceptDataFromDB('train_images');
     let index = 0;
@@ -264,7 +289,10 @@ export default defineComponent({
     }
     if (this.allImages.length > 0) {
       this.selectImg = this.allImages[0];
+      this.colorTag(this.selectImg);
     }
+  },
+  async created() {
   },
 })
 </script>

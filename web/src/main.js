@@ -435,6 +435,24 @@ export function getConcept() {
     });
 }
 
+export async function deleteConceptItem(tableName, key) {
+    let concept = sessionStorage.getItem('concept');
+    const db = await openDataBase(concept, (db_temp) => {
+        // 关闭新创建的数据库
+        event.target.result.close();
+        // 删除新创建的数据库
+        indexedDB.deleteDatabase(concept);
+    });
+    if (!db) {
+        return;
+    }
+
+    const transaction = db.transaction([tableName], 'readwrite'); // 创建读写事务
+    const store = transaction.objectStore(tableName);
+
+    const itemRequest = store.delete(key);
+}
+
 // 更新物体
 export async function updateConceptItem(tableName, key, field, newValue) {
     let concept = sessionStorage.getItem('concept');

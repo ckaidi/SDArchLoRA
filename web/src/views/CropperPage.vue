@@ -3,8 +3,6 @@
     <vue-cropper ref="cropper" v-bind="option"></vue-cropper>
   </div>
   <div class="test-button">
-    <button @click="down('base64')" class="m-2 btn btn-primary">download(base64)</button>
-    <button @click="down('blob')" class="m-2 btn btn-primary">download(blob)</button>
     <div style="display:block; width: 100%;">
       <label class="c-item">
         <span>固定长宽比</span>
