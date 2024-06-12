@@ -66,7 +66,7 @@ export default {
         fixed: true,
         fixedNumber: [1, 1],
         fillCover: '',
-        canScale: false,
+        canScale: true,
       },
       show: true
     }
