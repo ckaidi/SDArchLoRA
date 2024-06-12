@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
-	"os"
 )
 
 // ProjectDatabase 项目数据库
@@ -34,25 +33,10 @@ type ImageDatabase struct {
 
 func AddProjectToDatabase(project ResultDetail) *ProjectDatabase {
 	//host := os.Getenv("PGHOST")
-	host := ""
-	user := os.Getenv("GADA_PGUSER")
-	password := os.Getenv("GADA_PGPASSWORD")
-	dbname := os.Getenv("GADA_PGDBNAME")
-	port := os.Getenv("PGPORT")
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
-		host, user, password, dbname, port)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
-	if err != nil {
-		yellow := color.New(color.FgYellow).PrintlnFunc()
-		yellow("failed to connect database")
-		return nil
-	}
-
-	// 迁移 schema
-	err = db.AutoMigrate(&ProjectDatabase{})
-	if err != nil {
-		return nil
-	}
+	//user := os.Getenv("GADA_PGUSER")
+	//password := os.Getenv("GADA_PGPASSWORD")
+	//dbname := os.Getenv("GADA_PGDBNAME")
+	//port := os.Getenv("PGPORT")
 
 	projectDb := ProjectDatabase{
 		Author:          project.Author.Name,
@@ -130,10 +114,31 @@ func AddProjectToDatabase(project ResultDetail) *ProjectDatabase {
 		str += ","
 	}
 	projectDb.Photographers = str
+
+	host := "192.168.42.57"
+	user := "spider"
+	password := "nqf3dAHHM@RsrZGt"
+	dbname := "spider"
+	port := "5432"
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
+		host, user, password, dbname, port)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	yellow := color.New(color.FgYellow).PrintlnFunc()
+	if err != nil {
+		yellow("failed to connect database")
+		return &projectDb
+	}
+	// 迁移 schema
+	err = db.AutoMigrate(&ProjectDatabase{})
+	if err != nil {
+		yellow(err.Error())
+		return &projectDb
+	}
 	// 创建
 	result := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&projectDb)
 	if result.Error != nil {
-		panic(result.Error)
+		yellow(result.Error.Error())
+		return &projectDb
 	}
 	return &projectDb
 }
