@@ -77,7 +77,7 @@ export default {
       temp = temp.replace('medium_jpg', 'large_jpg');
       const xhr = new XMLHttpRequest();
       const that = this
-      xhr.open('POST', spiderServer + '/img2base64', true);
+      xhr.open('POST', 'http://' + spiderServer + '/img2base64', true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.onload = function () {
         if (xhr.status === 200) {
