@@ -9,7 +9,7 @@
   </div>
 </template>
 <script>
-import {continueSearchArchDaily, getConcept, getKeyword, saveDataToConceptToDB, searchArchDaily} from "@/main.js";
+import {continueSearchArchDaily, getKeyword, saveDataToConceptToDB, searchArchDaily} from "@/main.js";
 
 export default {
   methods: {

@@ -22,7 +22,7 @@ export const selectModalOpenEvent = 'selectModalOpenEvent'
 export const spiderServer = '127.0.0.1:8081'
 
 export async function initDataBase() {
-    const db = await openDataBase('concepts', (db_temp) => {
+    await openDataBase('concepts', (db_temp) => {
         // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
         if (!db_temp.objectStoreNames.contains('concepts')) {
             // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
@@ -30,6 +30,13 @@ export async function initDataBase() {
         }
     });
 
+    await openDataBase('projects', (db_temp) => {
+        // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
+        if (!db_temp.objectStoreNames.contains('projects')) {
+            // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
+            db_temp.createObjectStore('projects', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+        }
+    });
 }
 
 export const emitter = mitt()
@@ -394,6 +401,7 @@ export function loadSingleDataFromDB(dbname, keyPathName, key) {
         const getRequest = index.get(key);
 
         getRequest.onerror = (event) => {
+            alert(event)
             console.error('Error fetching data:', event.target.error);
             resolve(undefined)
         };

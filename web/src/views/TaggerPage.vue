@@ -32,7 +32,8 @@
       </div>
     </div>
     <div class=" col-6">
-      <div class="py-3">
+      <div class="py-3"
+           v-show="selectImg!==undefined &&selectImg.searchTag!==undefined && selectImg.searchTag.length>0">
         <label class="fw-bolder row m-1 justify-content-start">搜索关键字</label>
         <div class="gap-2"
              style="white-space: normal;display: inline-flex;overflow-wrap: break-word;word-break: break-word;flex-wrap: wrap">
@@ -44,7 +45,8 @@
           </span>
         </div>
       </div>
-      <div class="py-3">
+      <div class="py-3"
+           v-show="selectImg!==undefined &&selectImg.projectTag!==undefined && selectImg.projectTag.length>0">
         <label class="fw-bolder row m-1 justify-content-start">Archidaily中的Tag</label>
         <div class="gap-2"
              style="white-space: normal;display: inline-flex;overflow-wrap: break-word;word-break: break-word;flex-wrap: wrap">

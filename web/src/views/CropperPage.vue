@@ -104,35 +104,37 @@ export default {
         const project = await loadSingleDataFromDB('projects', 'name', document_id);
         let imgData = {name: this.$route.query.imgName, base64: data}
         imgData.projecttags = []
-        imgData.tags = '[]'
-        if (project.content.author !== "") {
-          imgData.projecttags.push(project.content.author);
-        }
-        if (project.content.categories !== "") {
-          let tags = project.content.categories.split(',')
-          for (const tagsKey of tags) {
-            if (tagsKey !== "")
-              imgData.projecttags.push(tagsKey);
+        imgData.tags = '[]';
+        if (project !== undefined) {
+          if (project.content.author !== "") {
+            imgData.projecttags.push(project.content.author);
           }
-        }
-        if (project.content.location !== "") {
-          imgData.projecttags.push(project.content.location);
-        }
-        if (project.content.meta_description !== "") {
-          imgData.projecttags.push(project.content.meta_description);
-        }
-        if (project.content.offices !== "") {
-          let tags = project.content.offices.split(',')
-          for (const tagsKey of tags) {
-            if (tagsKey !== "")
-              imgData.projecttags.push(tagsKey);
+          if (project.content.categories !== "") {
+            let tags = project.content.categories.split(',')
+            for (const tagsKey of tags) {
+              if (tagsKey !== "")
+                imgData.projecttags.push(tagsKey);
+            }
           }
-        }
-        if (project.content.tags !== "") {
-          let tags = project.content.tags.split(',')
-          for (const tagsKey of tags) {
-            if (tagsKey !== "")
-              imgData.projecttags.push(tagsKey);
+          if (project.content.location !== "") {
+            imgData.projecttags.push(project.content.location);
+          }
+          if (project.content.meta_description !== "") {
+            imgData.projecttags.push(project.content.meta_description);
+          }
+          if (project.content.offices !== "") {
+            let tags = project.content.offices.split(',')
+            for (const tagsKey of tags) {
+              if (tagsKey !== "")
+                imgData.projecttags.push(tagsKey);
+            }
+          }
+          if (project.content.tags !== "") {
+            let tags = project.content.tags.split(',')
+            for (const tagsKey of tags) {
+              if (tagsKey !== "")
+                imgData.projecttags.push(tagsKey);
+            }
           }
         }
         imgData.keyword = sessionStorage.getItem('keyword');
