@@ -580,8 +580,6 @@ function base64ToBlob(base64, mimeType) {
 // 下载文件到zip
 export async function downloadMultipleFilesAsZip(allImages) {
     const zip = new JSZip();
-    const folder = zip.folder('50_' + await getConcept());  // 创建一个文件夹
-
     let index = 0;
     for (const image of allImages) {
         let tagText = "";
@@ -590,16 +588,17 @@ export async function downloadMultipleFilesAsZip(allImages) {
         }
         // 添加文件到ZIP
         zip.file(index + '.txt', tagText);
-        zip.file(index + '.jpeg', base64ToBlob(image.url, 'jpeg'), {base64: true});
+        zip.file(index + '.jpg', base64ToBlob(image.url, 'jpeg'), {base64: true});
+        index++;
     }
 
     // 生成ZIP并触发下载
-    zip.generateAsync({type: 'blob'}).then(function (content) {
+    zip.generateAsync({type: 'blob'}).then(async function (content) {
         // 使用类似前面提到的下载方法
         const a = document.createElement('a');
         const url = URL.createObjectURL(content);
         a.href = url;
-        a.download = 'MyFiles.zip'; // 设置下载的文件名
+        a.download = '50_' + await getConcept() + '.zip'; // 设置下载的文件名
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

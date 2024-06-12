@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="cut">
+  <div class="cut" id="cut" style="width: 1600px;height: 1200px">
     <vue-cropper ref="cropper" v-bind="option"></vue-cropper>
   </div>
   <div class="test-button">
@@ -17,7 +17,7 @@
                aria-describedby="basic-addon1" v-model="option.fixedNumber[1]">
       </div>
       <button @click="nextStep" class="btn btn-primary m-2">下一步</button>
-      <button class="btn btn-primary m-2">稍后自行裁剪</button>
+      <button @click="skip" class="btn btn-primary m-2">稍后自行裁剪</button>
     </div>
   </div>
   <div class="show-preview"
@@ -36,15 +36,18 @@ import {loadSingleDataFromDB, saveTaggerImageToDB} from "@/main.js";
 export default {
   data() {
     return {
+      cropperW: 1500,
+      cropperH: 1000,
       model: false,
       modelSrc: '',
       crap: false,
       previews: {},
       lists: [],
       option: {
+        info: true,
         img: "",
         size: 1,
-        full: false,
+        full: true,
         outputType: "jpeg",
         canMove: true,
         fixedBox: false,
@@ -52,8 +55,8 @@ export default {
         canMoveBox: true,
         autoCrop: true,
         // 只有自动截图开启 宽度高度才生效
-        autoCropWidth: 200,
-        autoCropHeight: 150,
+        autoCropWidth: 1024,
+        autoCropHeight: 1024,
         centerBox: false,
         high: false,
         cropData: {},
@@ -64,6 +67,7 @@ export default {
         fixed: true,
         fixedNumber: [1, 1],
         fillCover: '',
+        canScale: false,
       },
       show: true
     }
@@ -79,6 +83,8 @@ export default {
       xhr.onload = function () {
         if (xhr.status === 200) {
           const result = JSON.parse(xhr.responseText)
+          document.getElementById('cut').style.width = result['Width'] + 'px';
+          document.getElementById('cut').style.height = result['Height'] + 'px';
           that.option.img = result['Base64'];
           that.lists.push({
             img: result['Base64'],
@@ -134,8 +140,49 @@ export default {
         await saveTaggerImageToDB(this.$route.query.imgName, imgData)
         window.location = '#/img2img'
       })
-    }
-    ,
+    },
+    async skip() {
+      document.createElement('a');
+      // 输出
+      let document_id = this.$route.query.document_id;
+      const project = await loadSingleDataFromDB('projects', 'name', document_id);
+      let imgData = {name: this.$route.query.imgName, base64: this.option.img}
+      imgData.projecttags = []
+      imgData.tags = '[]'
+      if (project.content.author !== "") {
+        imgData.projecttags.push(project.content.author);
+      }
+      if (project.content.categories !== "") {
+        let tags = project.content.categories.split(',')
+        for (const tagsKey of tags) {
+          if (tagsKey !== "")
+            imgData.projecttags.push(tagsKey);
+        }
+      }
+      if (project.content.location !== "") {
+        imgData.projecttags.push(project.content.location);
+      }
+      if (project.content.meta_description !== "") {
+        imgData.projecttags.push(project.content.meta_description);
+      }
+      if (project.content.offices !== "") {
+        let tags = project.content.offices.split(',')
+        for (const tagsKey of tags) {
+          if (tagsKey !== "")
+            imgData.projecttags.push(tagsKey);
+        }
+      }
+      if (project.content.tags !== "") {
+        let tags = project.content.tags.split(',')
+        for (const tagsKey of tags) {
+          if (tagsKey !== "")
+            imgData.projecttags.push(tagsKey);
+        }
+      }
+      imgData.keyword = sessionStorage.getItem('keyword');
+      await saveTaggerImageToDB(this.$route.query.imgName, imgData)
+      window.location = '#/img2img'
+    },
     // 实时预览函数
     down(type) {
       const aLink = document.createElement('a');
