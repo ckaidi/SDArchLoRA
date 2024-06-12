@@ -398,3 +398,4 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 /SpiderGo.exe
+/web/public/SpiderGo.exe

@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
 	"gorm.io/gorm"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 )
 
 type Detail struct {
@@ -143,6 +143,8 @@ func getImagesUrl(r *http.Request, conn *websocket.Conn, key string, page int) {
 				handle(err)
 				return
 			}
+			green := color.New(color.FgGreen).PrintlnFunc()
+			green("[项目:]" + project.MetaDescription)
 			analyseProject(conn, project, &allCount)
 		}
 		getImagesUrl(r, conn, key, page+1)
@@ -151,26 +153,32 @@ func getImagesUrl(r *http.Request, conn *websocket.Conn, key string, page int) {
 
 func analyseProject(conn *websocket.Conn, project ResultDetail, allCount *int) {
 	dbModel := AddProjectToDatabase(project)
-	err := conn.WriteJSON(dbModel)
-	if err != nil {
-		fmt.Println("写入项目信息数据库失败")
-		fmt.Println(err)
+	if dbModel != nil {
+		err := conn.WriteJSON(dbModel)
+		if err != nil {
+			fmt.Println("写入项目信息数据库失败")
+			fmt.Println(err)
+		}
 	}
 	Get(project.Url, func(response *http.Response) {
 		defer func(Body io.ReadCloser) {
-			err = Body.Close()
+			err := Body.Close()
 			handle(err)
 		}(response.Body)
 		reader, err := goquery.NewDocumentFromReader(response.Body)
 		handle(err)
-		reader.Find("img.gallery-thumbs-img").Each(func(i int, selection *goquery.Selection) {
-			fmt.Print(selection.Text())
+		images := reader.Find("img.gallery-thumbs-img")
+		green := color.New(color.FgGreen).PrintlnFunc()
+		green("找到" + strconv.Itoa(images.Length()) + "张图片")
+		images.Each(func(i int, selection *goquery.Selection) {
 			imageUrl := selection.AttrOr("src", "")
 			//imageUrl = strings.Replace(imageUrl, "medium_jpg", "small_jpg", 1)
 			title := selection.AttrOr("alt", "标题")
 			if imageUrl != "" {
-				lastText := strings.Split(imageUrl, "/")
-				fmt.Print(lastText)
+				//lastText := strings.Split(imageUrl, "/")
+				//fmt.Print(lastText)
+				formattedNum := fmt.Sprintf("%03d", i)
+				green("[图片" + formattedNum + ":]" + title)
 				err = conn.WriteJSON(ImageDetail{
 					Name:       title,
 					Url:        imageUrl,

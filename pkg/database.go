@@ -2,9 +2,11 @@ package pkg
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
 	"os"
 )
 
@@ -31,16 +33,19 @@ type ImageDatabase struct {
 }
 
 func AddProjectToDatabase(project ResultDetail) *ProjectDatabase {
-	host := os.Getenv("PGHOST")
+	//host := os.Getenv("PGHOST")
+	host := ""
 	user := os.Getenv("GADA_PGUSER")
 	password := os.Getenv("GADA_PGPASSWORD")
 	dbname := os.Getenv("GADA_PGDBNAME")
 	port := os.Getenv("PGPORT")
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
 		host, user, password, dbname, port)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 	if err != nil {
-		panic("failed to connect database")
+		yellow := color.New(color.FgYellow).PrintlnFunc()
+		yellow("failed to connect database")
+		return nil
 	}
 
 	// 迁移 schema
