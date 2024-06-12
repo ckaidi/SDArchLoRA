@@ -48,7 +48,10 @@ import {
   getConcept,
   createClientId,
   saveProjectInfoToDB,
-  updateConceptItem, saveDataToConceptToDB, loadConceptDataFromDB, getKeyword,
+  updateConceptItem,
+  saveDataToConceptToDB,
+  loadConceptDataFromDB,
+  getKeyword, initDataBase,
 } from "@/main.js";
 
 
@@ -105,6 +108,7 @@ export default {
     }
   },
   async beforeCreate() {
+    await initDataBase();
     createClientId();
     const concept = await getConcept();
     let keyword = await getKeyword();

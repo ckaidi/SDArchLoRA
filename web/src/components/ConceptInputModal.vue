@@ -7,15 +7,12 @@
           <h1 class="modal-title fs-5" id="staticBackdropLabel">请输入lora概念</h1>
         </div>
         <div class="modal-body">
-          <form>
-            <input type="text" class="form-control" id="message-text" placeholder="lora概念" v-model="concept">
+          <form @submit.prevent="keyboardEnter">
+            <input type="text" class="form-control" id="message-text" placeholder="lora概念" ref="conceptInput"
+                   v-model="concept">
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-danger"
-                  data-bs-dismiss="modal"
-                  id="staticBackdropButton">取消
-          </button>
           <button type="button" class="btn btn-primary"
                   @click="addConcept(concept)" data-bs-dismiss="modal"
                   id="staticBackdropButton">确定
@@ -45,11 +42,20 @@ export default {
         backdrop: 'static', // 设置背景为静态
         keyboard: false // 禁止键盘关闭模态框
       });
+      // 设置焦点到输入框
+      this.$nextTick(() => {
+        this.$refs.conceptInput.focus();
+      });
       myModal.show(); // 显示模态框
     })
   },
+  created() {
+  },
   methods: {
-    addConcept
+    addConcept,
+    keyboardEnter() {
+      document.getElementById('staticBackdropButton').click()
+    }
   }
 }
 </script>

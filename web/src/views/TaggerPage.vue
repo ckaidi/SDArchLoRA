@@ -99,7 +99,6 @@ import {
   createClientId, deleteConceptItem, downloadMultipleFilesAsZip, downloadTextFile, loadConceptDataFromDB,
   saveDataToConceptToDB, updateConceptItem
 } from "@/main.js";
-import {sdServer} from "@/sdApi.js";
 
 export default defineComponent({
   components: {NavigationComponent},

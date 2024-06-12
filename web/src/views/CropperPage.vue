@@ -30,8 +30,7 @@
 <script>
 import 'vue-waterfall-plugin-next/dist/style.css';
 import 'vue-cropper/dist/vue-cropper.umd.js';
-import {sdServer} from "@/sdApi.js";
-import {loadSingleDataFromDB, saveTaggerImageToDB} from "@/main.js";
+import {loadSingleDataFromDB, saveTaggerImageToDB, spiderServer} from "@/main.js";
 
 export default {
   data() {
@@ -78,7 +77,7 @@ export default {
       temp = temp.replace('medium_jpg', 'large_jpg');
       const xhr = new XMLHttpRequest();
       const that = this
-      xhr.open('POST', sdServer + '/img2base64', true);
+      xhr.open('POST', spiderServer + '/img2base64', true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.onload = function () {
         if (xhr.status === 200) {

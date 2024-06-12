@@ -19,14 +19,18 @@ export const tipsModalEvent = 'tipsModalEvent'
 export const conceptModalOpenEvent = 'conceptModalOpenEvent'
 export const conceptModalCloseEvent = 'conceptModalCloseEvent'
 export const selectModalOpenEvent = 'selectModalOpenEvent'
+export const spiderServer = '127.0.0.1:8081'
 
-const db = await openDataBase('concepts', (db_temp) => {
-    // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
-    if (!db_temp.objectStoreNames.contains('concepts')) {
-        // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
-        db_temp.createObjectStore('concepts', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
-    }
-});
+export async function initDataBase() {
+    const db = await openDataBase('concepts', (db_temp) => {
+        // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
+        if (!db_temp.objectStoreNames.contains('concepts')) {
+            // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
+            db_temp.createObjectStore('concepts', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+        }
+    });
+
+}
 
 export const emitter = mitt()
 const instance = createApp(App)
@@ -144,11 +148,31 @@ export const appendAlert = (message, type) => {
     }, 3000)
 }
 
+// 检查ws服务器
+export function checkWsServer() {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const ws = new WebSocket("ws://" + spiderServer + "/archdaily?test=true");
+            // 注册 onmessage 事件的回调函数
+            ws.onmessage = function (event) {
+                resolve(true);
+            };
+
+            // 注册 onerror 事件的回调函数
+            ws.onerror = function (event) {
+                resolve(false);
+            };
+        } catch (error) {
+            resolve(false);
+        }
+    });
+}
+
 // 向后端发送请求，爬取archidaily
 export function searchArchDaily(keyword, onReceiveImg) {
     // 创建一个 WebSocket 对象，连接到本地的 8080 端口
     if (keyword !== "") {
-        const ws = new WebSocket("ws://127.0.0.1:8081/archdaily?keyword=" + keyword + "&page=1&projectCount=0");
+        const ws = new WebSocket("ws://" + spiderServer + "/archdaily?keyword=" + keyword + "&page=1&projectCount=0");
         searchCore(ws, onReceiveImg);
     }
 }
@@ -175,7 +199,7 @@ export async function continueSearchArchDaily(keyword, onReceiveImg) {
             }
             const count = key.project_count;
             const page = key.page_count;
-            const ws = new WebSocket("ws://127.0.0。1:8081/archdaily?" + "keyword=" + keyword + "&page=" + page + "&projectCount=" + count);
+            const ws = new WebSocket("ws://" + spiderServer + "/archdaily?" + "keyword=" + keyword + "&page=" + page + "&projectCount=" + count);
 
             searchCore(ws, onReceiveImg);
         } catch (e) {
@@ -544,6 +568,7 @@ function openDataBase(dbname, createTable) {
     });
 }
 
+// 下载文本文件
 export function downloadTextFile(text, filename) {
     // 创建一个Blob对象，它包含要下载的数据
     const blob = new Blob([text], {type: 'text/plain'});
