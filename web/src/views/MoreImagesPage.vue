@@ -28,6 +28,9 @@
               <button type="button" class="btn btn-secondary" @click="tagImg(item)">
                 放入训练
               </button>
+              <a type="button" class="btn btn-secondary" :href="seeBig(item)" target="_blank">
+                查看大图
+              </a>
             </div>
             <img :src=url :alt="item.name" class="card-img-top">
           </div>
@@ -59,8 +62,10 @@ export default {
   components: {NavigationComponent, SearchComponent, LazyImg, Waterfall},
   methods: {
     async tagImg(item) {
-      const concept = await getConcept();
       window.location = "/#/cropper?" + "imgUrl=" + item.src.original + "&imgName=" + item.name + "&document_id=" + item.document_id
+    },
+    seeBig(item) {
+      return item.src.original.replace('medium_jpg', 'large_jpg');
     },
     showMore() {
       this.$refs.searchComponent.showMore()
