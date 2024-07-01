@@ -7,14 +7,14 @@
           <h1 class="modal-title fs-5" id="staticBackdropLabel">请输入lora概念</h1>
         </div>
         <div class="modal-body">
-          <form @submit.prevent="keyboardEnter">
+          <form @submit.prevent="this.keyboardEnter">
             <input type="text" class="form-control" id="message-text" placeholder="lora概念" ref="conceptInput"
-                   v-model="concept">
+                   v-model="this.concept">
           </form>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary"
-                  @click="addConcept(concept)" data-bs-dismiss="modal"
+                  @click="this.addConcept(this.concept)" data-bs-dismiss="modal"
                   id="staticBackdropButton">确定
           </button>
         </div>
@@ -22,9 +22,10 @@
     </div>
   </div>
 </template>
-<script>
+<script lang="ts">
 
 import {addConcept, conceptModalOpenEvent, emitter} from "@/main";
+import {Modal} from "bootstrap";
 
 export default {
   data() {
@@ -38,7 +39,7 @@ export default {
   },
   mounted() {
     emitter.on(conceptModalOpenEvent, () => {
-      const myModal = new bootstrap.Modal(document.getElementById('staticBackdrop'), {
+      const myModal = new Modal(document.getElementById('staticBackdrop'), {
         backdrop: 'static', // 设置背景为静态
         keyboard: false // 禁止键盘关闭模态框
       });
@@ -48,8 +49,6 @@ export default {
       });
       myModal.show(); // 显示模态框
     })
-  },
-  created() {
   },
   methods: {
     addConcept,
