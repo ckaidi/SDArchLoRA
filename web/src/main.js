@@ -21,6 +21,7 @@ export const conceptModalCloseEvent = 'conceptModalCloseEvent'
 export const selectModalOpenEvent = 'selectModalOpenEvent'
 export const spiderServer = '127.0.0.1:8081'
 
+// 插入概念数据库和项目数据库以及图片数据库
 export async function initDataBase() {
     await openDataBase('concepts', (db_temp) => {
         // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
