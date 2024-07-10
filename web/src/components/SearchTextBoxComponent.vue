@@ -2,6 +2,7 @@
 
 import {ref} from "vue";
 import {saveDataToConceptToDB, searchArchDaily} from "../main.ts";
+import {SearchDB} from "../types/SearchDB.ts";
 
 // 定义一个接口用于 props
 interface Props {
@@ -13,12 +14,7 @@ const keyword = ref("")
 
 function search() {
   sessionStorage.setItem('keyword', keyword.value)
-  saveDataToConceptToDB('searches', {
-    name: keyword.value,
-    page_count: 1,
-    project_count: 0,
-    date: Date.now()
-  })
+  saveDataToConceptToDB('searches', new SearchDB(keyword.value, Date.now(), 1, 0))
   searchArchDaily(keyword.value, props.onReceiveImg)
 }
 </script>

@@ -2,11 +2,13 @@
 
 import SearchTextBoxComponent from "./SearchTextBoxComponent.vue";
 import {ImageItem} from "../types/ImageItem.ts"
-import {saveDataToConceptToDB, saveProjectInfoToDB, updateConceptItem} from "../main.ts";
+import {saveDataToConceptToDB, saveImageToDB, saveProjectInfoToDB, updateConceptItem} from "../main.ts";
 import {ref} from "vue";
 import SearchComponent from "./SearchComponent.vue";
 import {Waterfall} from "vue-waterfall-plugin-next";
 import {WaterOptions} from "../types/WaterOptions.ts";
+import {ImageDB} from "../types/ImageDB.ts";
+import {ProjectDB} from "../types/ProjectDB.ts";
 
 const searchComponent = ref<typeof SearchComponent | null>(null);
 const currentSelectUrl = ref("");
@@ -49,9 +51,12 @@ function addImages(imageText: string) {
   const jsonData = JSON.parse(imageText)
   if ("document_type" in jsonData) {
     // 保存项目信息
-    saveProjectInfoToDB(jsonData.document_id, jsonData)
+    saveProjectInfoToDB(new ProjectDB(jsonData.url, jsonData.CreateAt, jsonData.UpdateAt, jsonData.author, jsonData.bim,
+        jsonData.categories, jsonData.document_type, jsonData.location, jsonData.meta_description, jsonData.offices,
+        jsonData.photographers, jsonData.tags, jsonData.title, jsonData.url, jsonData.year));
   } else {
     // 保存图片信息
+    saveImageToDB(new ImageDB(jsonData.url, jsonData.name, jsonData.document_id));
     saveDataToConceptToDB('images', {
       name: jsonData.name,
       keyword: [sessionStorage.getItem('keyword')],

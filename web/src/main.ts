@@ -12,6 +12,8 @@ import VueCookies from 'vue-cookies'
 import VueCropper from 'vue-cropper';
 import router from "./router";
 import JSZip from 'jszip';
+import {ImageDB} from "./types/ImageDB.ts";
+import {ProjectDB} from "./types/ProjectDB.ts";
 
 export const emitter = mitt()
 export const spiderServer = '127.0.0.1:8081'
@@ -19,34 +21,28 @@ export const selectModalOpenEvent = 'selectModalOpenEvent'
 export const conceptModalOpenEvent = 'conceptModalOpenEvent'
 export const conceptModalCloseEvent = 'conceptModalCloseEvent'
 
-// 插入概念数据库和项目数据库以及图片数据库
-export async function initDataBase() {
-    await openDataBase('concepts', (db_temp) => {
-        // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
-        if (!db_temp.objectStoreNames.contains('concepts')) {
-            // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
-            db_temp.createObjectStore('concepts', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
-        }
-    });
-
-    await openDataBase('projects', (db_temp) => {
-        // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
-        if (!db_temp.objectStoreNames.contains('projects')) {
-            // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
-            db_temp.createObjectStore('projects', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
-        }
-    });
-}
-
 const instance = createApp(App)
 instance.use(router)
 instance.use(VueCookies)
 instance.use(VueCropper)
 instance.mount('#app')// 实现一个 once 功能
+initDataBase();
 
 //生成随机字符
 const _charStr = 'abacdefghjklmnopqrstuvwxyzABCDEFGHJKLMNOPQRSTUVWXYZ0123456789';
 const alertPlaceholder = document.getElementById('liveAlertPlaceholder') as HTMLDivElement
+
+// 插入概念数据库和项目数据库以及图片数据库
+async function initDataBase() {
+    // 创建概念数据库
+    await createSameNameTable('concepts', 'name');
+
+    // 创建项目数据库
+    await createSameNameTable('projects', 'document_id');
+
+    // 创建图片数据库
+    await createSameNameTable('images', 'url');
+}
 
 /**
  * 随机生成索引
@@ -63,6 +59,16 @@ function RandomIndex(min: number, max: number, i: number): number {
     }
     //返回最终索引值
     return index;
+}
+
+async function createSameNameTable(dbName: string, key: string) {
+    await openDataBase(dbName, (db_temp) => {
+        // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
+        if (!db_temp.objectStoreNames.contains(dbName)) {
+            // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
+            db_temp.createObjectStore(dbName, {keyPath: key}).createIndex(key + "Index", key, {unique: true});
+        }
+    });
 }
 
 // 所有方法都从这打开数据库
@@ -125,8 +131,8 @@ export function checkDataInDB(dbName: string, storeName: string, indexValue: str
 }
 
 
-// 保存数据到前端数据库
-export async function saveConceptsToDB(key: string, buffer: object | string) {
+// 保存概念到数据库
+export async function saveConceptToDB(key: string) {
     const db = await openDataBase('concepts', (db_temp) => {
         // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
         if (!db_temp.objectStoreNames.contains('concepts')) {
@@ -135,13 +141,13 @@ export async function saveConceptsToDB(key: string, buffer: object | string) {
         }
     });
 
-    // 创建一个读写事务，目标对象存储空间为images
+    // 创建一个读写事务，目标对象存储空间为concepts
     const transaction = db.transaction(['concepts'], "readwrite");
     // 获取对象存储空间
     const store = transaction.objectStore('concepts');
     // 向对象存储空间中添加或更新一条记录
     // const imgRequest = store.put(buffer);
-    const imgRequest = store.put({name: key, content: buffer});
+    const imgRequest = store.put({name: key});
 
     imgRequest.onsuccess = () => {
         console.log("Image saved successfully!");
@@ -152,19 +158,17 @@ export async function saveConceptsToDB(key: string, buffer: object | string) {
         console.error("Error saving the image:", request.error);
     };
 
+    // 创建概念相关数据库
     await openDataBase(key, (db_temp) => {
         // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
-        if (!db_temp.objectStoreNames.contains('searches')) {
-            db_temp.createObjectStore('searches', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
-        }
-        if (!db_temp.objectStoreNames.contains('images')) {
-            db_temp.createObjectStore('images', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+        if (!db_temp.objectStoreNames.contains('user_tags')) {
+            db_temp.createObjectStore('user_tags', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
         }
         if (!db_temp.objectStoreNames.contains('train_images')) {
             db_temp.createObjectStore('train_images', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
         }
-        if (!db_temp.objectStoreNames.contains('user_tags')) {
-            db_temp.createObjectStore('user_tags', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+        if (!db_temp.objectStoreNames.contains('searches')) {
+            db_temp.createObjectStore('searches', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
         }
     });
 }
@@ -176,7 +180,7 @@ export async function addConcept(concept: string) {
         emitter.emit(conceptModalOpenEvent);
     } else {
         sessionStorage.setItem('concept', concept)
-        await saveConceptsToDB(concept, concept)
+        await saveConceptToDB(concept)
         emitter.emit(conceptModalCloseEvent, concept);
     }
 }
@@ -206,6 +210,7 @@ export async function saveDataToConceptToDB(tableName: string, buffer: object) {
     };
 }
 
+//
 function searchCore(ws: WebSocket, onReceiveImg: (arg: any) => void) {
     // 注册 onopen 事件的回调函数
     ws.onopen = function () {
@@ -285,33 +290,6 @@ export async function updateConceptItem(tableName: string, key: IDBValidKey | ID
     itemRequest.onerror = (event) => {
         const request = event.target as IDBRequest;
         console.error('Error fetching item:', request.error);
-    };
-}
-
-export async function saveProjectInfoToDB(key: string, buffer: object) {
-    const db = await openDataBase('projects', (db_temp) => {
-        // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
-        if (!db_temp.objectStoreNames.contains('projects')) {
-            // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
-            db_temp.createObjectStore('projects', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
-        }
-    });
-
-    // 创建一个读写事务，目标对象存储空间为images
-    const transaction = db.transaction(['projects'], "readwrite");
-    // 获取对象存储空间
-    const store = transaction.objectStore('projects');
-    // 向对象存储空间中添加或更新一条记录
-    // const imgRequest = store.put(buffer);
-    const imgRequest = store.put({name: key, content: buffer});
-
-    imgRequest.onsuccess = () => {
-        console.log("Image saved successfully!");
-    };
-
-    imgRequest.onerror = (e) => {
-        const request = e.target as IDBRequest;
-        console.error("Error saving the image:", request.error);
     };
 }
 
@@ -555,4 +533,41 @@ export function createClientId() {
     let uuid = sessionStorage.getItem('clientId')
     if (uuid === null)
         sessionStorage.setItem('clientId', v4())
+}
+
+// 保存数据到指定到库和表
+export async function saveDataToDB(dbTableName: string, key: string, data: object) {
+    const db = await openDataBase(dbTableName, (db_temp) => {
+        // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
+        if (!db_temp.objectStoreNames.contains(dbTableName)) {
+            // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
+            db_temp.createObjectStore(dbTableName, {keyPath: key}).createIndex(key + "Index", key, {unique: true});
+        }
+    });
+
+    // 创建一个读写事务，目标对象存储空间为images
+    const transaction = db.transaction([dbTableName], "readwrite");
+    // 获取对象存储空间
+    const store = transaction.objectStore(dbTableName);
+    // 向对象存储空间中添加或更新一条记录
+    const imgRequest = store.put(data);
+
+    imgRequest.onsuccess = () => {
+        console.log("Image saved successfully!");
+    };
+
+    imgRequest.onerror = (e) => {
+        const request = e.target as IDBRequest;
+        console.error("Error saving the image:", request.error);
+    };
+}
+
+// 保存项目到数据库
+export async function saveProjectInfoToDB(project: ProjectDB) {
+    await saveDataToDB("projects", "document_id", project);
+}
+
+// 保存图片到数据库
+export async function saveImageToDB(image: ImageDB) {
+    await saveDataToDB("images", "url", image);
 }

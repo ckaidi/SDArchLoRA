@@ -4,8 +4,14 @@ import NavigationComponent from "../components/NavigationComponent.vue";
 import SearchComponent from "../components/SearchComponent.vue";
 import SelectedImgComponent from "../components/SelectedImgComponent.vue";
 import {ref} from "vue";
+import {getConcept} from "../main.ts";
+
+async function init(): Promise<void> {
+  await getConcept();
+}
 
 const currentTab = ref("搜图");
+init();
 </script>
 
 <template>
