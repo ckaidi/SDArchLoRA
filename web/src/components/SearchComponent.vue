@@ -1,4 +1,78 @@
-﻿<template>
+<script setup lang="ts">
+
+import SearchTextBoxComponent from "./SearchTextBoxComponent.vue";
+import {ImageItem} from "../types/ImageItem.ts"
+import {saveDataToConceptToDB, saveProjectInfoToDB, updateConceptItem} from "../main.ts";
+import {ref} from "vue";
+import SearchComponent from "./SearchComponent.vue";
+import {Waterfall} from "vue-waterfall-plugin-next";
+import {WaterOptions} from "../types/WaterOptions.ts";
+
+const searchComponent = ref<typeof SearchComponent | null>(null);
+const currentSelectUrl = ref("");
+const list = ref<ImageItem[]>([]);
+const options = ref<WaterOptions>(new WaterOptions());
+
+async function tagImg(item: ImageItem) {
+  window.location.href = "/#/cropper?" + "imgUrl=" + item.src.original + "&imgName=" + item.name + "&document_id=" + item.document_id
+}
+
+function seeBig(item: ImageItem) {
+  return item.src.original.replace('medium_jpg', 'large_jpg');
+}
+
+function showMore() {
+  if (searchComponent.value)
+    searchComponent.value.showMore()
+}
+
+function mouseover(item: ImageItem) {
+  item.show = true
+  currentSelectUrl.value = item.src.original
+}
+
+function mouseleave(item: ImageItem) {
+  item.show = false
+}
+
+// 接收到新图片到处理函数
+function addImages(imageText: string) {
+  if (imageText === 'end')
+    return
+  if (imageText.startsWith('chenkaidiConfig')) {
+    const texts = imageText.split('/')
+    const key = sessionStorage.getItem('keyword') as IDBValidKey | IDBKeyRange
+    updateConceptItem('searches', key, 'page_count', Number(texts[1]))
+    updateConceptItem('searches', key, 'project_count', Number(texts[2]))
+    return
+  }
+  const jsonData = JSON.parse(imageText)
+  if ("document_type" in jsonData) {
+    // 保存项目信息
+    saveProjectInfoToDB(jsonData.document_id, jsonData)
+  } else {
+    // 保存图片信息
+    saveDataToConceptToDB('images', {
+      name: jsonData.name,
+      keyword: [sessionStorage.getItem('keyword')],
+      url: jsonData.url,
+      document_id: jsonData.document_id,
+      date: Date.now()
+    });
+    list.value.push({
+      keyword: [sessionStorage.getItem('keyword') as string],
+      src: {
+        original: jsonData.url
+      },
+      document_id: jsonData.document_id,
+      name: jsonData.name,
+      show: false
+    })
+  }
+}
+</script>
+
+<template>
   <SearchTextBoxComponent ref="searchComponent" :on-receive-img="addImages"/>
   <div style="min-height: 100%; width:100%">
     <Waterfall
@@ -16,7 +90,7 @@
         :cross-origin=true
         :align="options.align"
     >
-      <template #item="{ item, url, index }">
+      <template #item="{ item, url }">
         <div @mouseover="mouseover(item)" @mouseleave="mouseleave(item)"
              class="bg-gray-900 rounded-lg shadow-md overflow-hidden transition-all
             duration-300 ease-linear hover:shadow-lg hover:shadow-gray-600 group">
@@ -50,158 +124,7 @@
     </button>
   </div>
 </template>
-<script>
-import 'vue-waterfall-plugin-next/dist/style.css'
-import SearchTextBoxComponent from "@/components/SearchTextBoxComponent.vue";
-import {LazyImg, Waterfall} from "vue-waterfall-plugin-next";
-import {
-  getConcept,
-  createClientId,
-  saveProjectInfoToDB,
-  updateConceptItem,
-  saveDataToConceptToDB,
-  loadConceptDataFromDB,
-  getKeyword, initDataBase,
-} from "@/main.js";
 
-
-export default {
-  components: {SearchTextBoxComponent, LazyImg, Waterfall},
-  methods: {
-    async tagImg(item) {
-      window.location = "/#/cropper?" + "imgUrl=" + item.src.original + "&imgName=" + item.name + "&document_id=" + item.document_id
-    },
-    seeBig(item) {
-      return item.src.original.replace('medium_jpg', 'large_jpg');
-    },
-    showMore() {
-      this.$refs.searchComponent.showMore()
-    },
-    mouseover(item) {
-      item.show = true
-      this.currentSelectUrl = item.src.original
-    },
-    mouseleave(item) {
-      item.show = false
-    },
-    // 接收到新图片到处理函数
-    addImages(imageText) {
-      if (imageText === 'end')
-        return
-      if (imageText.startsWith('chenkaidiConfig')) {
-        const texts = imageText.split('/')
-        updateConceptItem('searches', sessionStorage.getItem('keyword'), 'page_count', Number(texts[1]))
-        updateConceptItem('searches', sessionStorage.getItem('keyword'), 'project_count', Number(texts[2]))
-        return
-      }
-      const jsonData = JSON.parse(imageText)
-      if ("document_type" in jsonData) {
-        // 保存项目信息
-        saveProjectInfoToDB(jsonData.document_id, jsonData)
-      } else {
-        // 保存图片信息
-        saveDataToConceptToDB('images', jsonData.name, {
-          name: jsonData.name,
-          keyword: [sessionStorage.getItem('keyword')],
-          url: jsonData.url,
-          document_id: jsonData.document_id,
-          date: Date.now()
-        });
-        this.list.push({
-          keyword: [sessionStorage.getItem('keyword')],
-          src: {
-            original: jsonData.url
-          },
-          document_id: jsonData.document_id,
-          name: jsonData.name,
-          show: false
-        })
-      }
-    }
-  },
-  async beforeCreate() {
-    await initDataBase();
-    createClientId();
-    const concept = await getConcept();
-    let keyword = await getKeyword();
-    if (keyword !== null && keyword !== undefined) {
-      const arrays = await loadConceptDataFromDB('images');
-      arrays.sort((item1, item2) => {
-        return item1.date - item2.date;
-      });
-      for (const image of arrays) {
-        if (image.url === undefined) continue;
-        if (!image.keyword.includes(keyword)) continue;
-        this.list.push({
-          src: {
-            original: image.url
-          },
-          document_id: image.document_id,
-          name: image.name,
-          show: false
-        })
-      }
-    }
-  },
-  data() {
-    return {
-      generateBase64Image: "",
-      currentSelectUrl: "",
-      list: [],
-      columnHeights: [0, 0, 0],
-      options: {
-        // 唯一key值
-        rowKey: 'id',
-        // 卡片之间的间隙
-        gutter: 10,
-        // 是否有周围的gutter
-        hasAroundGutter: false,
-        // 卡片在PC上的宽度
-        width: 320,
-        // 自定义行显示个数，主要用于对移动端的适配
-        breakpoints: {
-          1200: {
-            // 当屏幕宽度小于等于1200
-            rowPerView: 4,
-          },
-          800: {
-            // 当屏幕宽度小于等于800
-            rowPerView: 3,
-          },
-          500: {
-            // 当屏幕宽度小于等于500
-            rowPerView: 2,
-          },
-        },
-        // 动画效果
-        animationEffect: 'animate__fadeInUp',
-        // 动画时间
-        animationDuration: 1000,
-        // 动画延迟
-        animationDelay: 300,
-        // imgSelector
-        imgSelector: 'src.original',
-        // 加载配置
-        // 是否懒加载
-        lazyload: true,
-        align: 'center',
-        crossOrigin: true,
-      }
-    }
-  },
-}
-</script>
 <style scoped>
-.cardButtonShow {
-  visibility: visible;
-}
 
-.cardButtonHide {
-  visibility: hidden;
-}
-
-.item img {
-  width: 100%;
-  height: 100%;
-}
 </style>

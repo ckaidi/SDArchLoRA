@@ -1,3 +1,184 @@
+﻿<script setup lang="ts">
+
+import NavigationComponent from "../components/NavigationComponent.vue";
+import {ref} from "vue";
+import {
+  appendAlert, createClientId,
+  deleteConceptItem,
+  downloadMultipleFilesAsZip, loadConceptDataFromDB,
+  saveDataToConceptToDB,
+  updateConceptItem
+} from "../main.ts";
+import {Tag} from "../types/Tag.ts";
+import {Image} from "../types/Image.ts";
+
+const userInput = ref<string>('');
+const selectImg = ref<Image>(new Image());
+const allImages = ref<Image[]>([]);
+const allTaggers = ref<any[]>([]);
+const currentTab = ref<string>("打标签");
+
+beforeCreate();
+
+// beforeCreate
+function beforeCreate(): Promise<boolean> {
+  return new Promise<boolean>(async (resolve) => {
+    allTaggers.value = await loadConceptDataFromDB('user_tags');
+    createClientId();
+    const arrays = await loadConceptDataFromDB('train_images');
+    let index = 0;
+    for (const image of arrays) {
+      // TODO 推测tags类型
+      const tags = JSON.parse(image.tags)
+      allImages.value.push(new Image(image.name, index, image.base64, tags, createTags([image.keyword]), createTags(image.projecttags)));
+      index++;
+    }
+    if (allImages.value.length > 0) {
+      selectImg.value = allImages.value[0];
+      colorTag(selectImg.value);
+    }
+    resolve(true);
+  });
+}
+
+
+function isActive(index: number, path: string) {
+  if (selectImg.value.url === "") {
+    return index === 0
+  }
+  return path === selectImg.value.url
+}
+
+function colorTag(item: Image) {
+  for (const tag of item.tags) {
+    for (let i = 0; i < allTaggers.value.length; i++) {
+      if (allTaggers.value[i].tag === tag.tag) {
+        allTaggers.value[i].color = 'text-bg-primary';
+      }
+    }
+    for (let i = 0; i < selectImg.value.projectTag.length; i++) {
+      if (selectImg.value.projectTag[i].tag === tag.tag) {
+        selectImg.value.projectTag[i].color = 'text-bg-primary';
+      }
+    }
+    for (let i = 0; i < selectImg.value.searchTag.length; i++) {
+      if (selectImg.value.searchTag[i].tag === tag.tag) {
+        selectImg.value.searchTag[i].color = 'text-bg-primary';
+      }
+    }
+  }
+}
+
+async function smallSelected(item: Image) {
+  selectImg.value = item;
+  colorTag(item);
+}
+
+async function selectTag(tag: any, flag: boolean) {
+  tag.color = 'text-bg-primary';
+  if (flag) {
+    if (selectImg.value.url !== '') {
+      const foundElement = selectImg.value.tags.find(element => element === tag);
+      const foundElement2 = allTaggers.value.find(element => element === tag);
+      const foundElement3 = selectImg.value.projectTag.find(element => element === tag);
+      const foundElement4 = selectImg.value.searchTag.find(element => element === tag);
+      if (foundElement === undefined && (foundElement2 !== undefined || foundElement3 !== undefined || foundElement4 !== undefined)) {
+        selectImg.value.tags.push(tag)
+        await updateConceptItem('train_images', selectImg.value.name, 'tags', JSON.stringify(selectImg.value.tags));
+        if (foundElement2 !== undefined) {
+          foundElement2.used += 1;
+          await updateConceptItem('user_tags', foundElement2.tag,
+              'used', foundElement2.used);
+        }
+      }
+    }
+  } else {
+    await deleteTag(tag);
+  }
+}
+
+async function deleteSelectTag(tag: any) {
+  if (selectImg.value.url !== '') {
+    selectImg.value.tags = selectImg.value.tags.filter(element => element.tag !== tag.tag);
+    await updateConceptItem('train_images', selectImg.value.name, 'tags', JSON.stringify(selectImg.value.tags));
+    for (let i = 0; i < allTaggers.value.length; i++) {
+      if (allTaggers.value[i].tag === tag.tag) {
+        allTaggers.value[i].color = 'text-bg-secondary';
+        allTaggers.value[i].used--;
+        await updateConceptItem('user_tags', tag.tag, 'used', allTaggers.value[i].used);
+        break;
+      }
+    }
+    for (let i = 0; i < selectImg.value.projectTag.length; i++) {
+      if (selectImg.value.projectTag[i].tag === tag.tag) {
+        selectImg.value.projectTag[i].color = 'text-bg-secondary';
+        break;
+      }
+    }
+  }
+}
+
+async function deleteTag(tag: any) {
+  // TODO推测类型
+  for (const images of allImages.value) {
+    images.tags = images.tags.filter(element => element.tag !== tag.tag);
+  }
+  if (allTaggers) {
+    allTaggers.value = allTaggers.value.filter(element => element.tag !== tag.tag);
+    await deleteConceptItem('user_tags', tag.name)
+    await updateConceptItem('train_images', selectImg.value.name, 'tags', JSON.stringify(selectImg.value.tags));
+  }
+}
+
+function createTags(strArray: Tag[]) {
+  let result = [];
+  for (const strArrayElement of strArray) {
+    // TODO 推测strArrayElement类型
+    result.push(new Tag("archdaily", strArrayElement, 'text-bg-secondary', "archdaily"))
+  }
+  return result;
+}
+
+
+// 根据tag长度计算tag文字
+function calculateTag(tag: string) {
+  if (tag.length > 20) {
+    return tag.substring(0, 20) + '......';
+  }
+  return tag;
+}
+
+
+function userTagSubmit() {
+  if (userInput.value) {
+    const foundElement2 = allTaggers.value.find(element => element.tag === userInput.value);
+    if (foundElement2 === undefined || foundElement2 === null) {
+      let d = {
+        name: userInput.value,
+        key: "archdaily",
+        tag: userInput.value,
+        color: 'text-bg-secondary',
+        tagType: "archdaily",
+        used: 0,
+      }
+      allTaggers.value.push(d);
+      saveDataToConceptToDB('user_tags', d);
+      userInput.value = "";
+    } else {
+      appendAlert("tag已存在", "warning")
+    }
+  } else {
+    appendAlert("tag不能为空", "danger")
+  }
+}
+
+
+// 导出训练数据
+function exportTrainData() {
+  downloadMultipleFilesAsZip(allImages.value);
+}
+</script>
+
 <template>
   <NavigationComponent :activate-tab="currentTab"/>
   <div class="row" style="width: 100%">
@@ -15,7 +196,8 @@
         <label class="align-content-start fw-bolder row m-1 justify-content-start">当前Tag</label>
         <div class="gap-2"
              style="white-space: normal;display: inline-flex;overflow-wrap: break-word;word-break: break-word;flex-wrap: wrap">
-          <span v-for="tag in selectImg.tag" :key="tag" class="badge d-flex p-2 align-items-center rounded-pill border "
+          <span v-for="tag in selectImg.tags" :key="tag"
+                class="badge d-flex p-2 align-items-center rounded-pill border "
                 style="cursor: pointer"
                 :class="tag.color">
             <span class="px-1">{{ calculateTag(tag.tag) }}</span>
@@ -33,11 +215,11 @@
     </div>
     <div class=" col-6">
       <div class="py-3"
-           v-show="selectImg!==undefined &&selectImg.searchTag!==undefined && selectImg.searchTag.length>0">
+           v-show="selectImg.searchTag!==undefined && selectImg.searchTag.length>0">
         <label class="fw-bolder row m-1 justify-content-start">搜索关键字</label>
         <div class="gap-2"
              style="white-space: normal;display: inline-flex;overflow-wrap: break-word;word-break: break-word;flex-wrap: wrap">
-          <span v-for="tag in selectImg.searchTag" :key="tag"
+          <span v-for="tag in selectImg.searchTag" :key="tag.key"
                 class="badge d-flex p-2 align-items-center rounded-pill border "
                 style="cursor: pointer" @click="selectTag(tag,true)"
                 :class="tag.color">
@@ -46,11 +228,11 @@
         </div>
       </div>
       <div class="py-3"
-           v-show="selectImg!==undefined &&selectImg.projectTag!==undefined && selectImg.projectTag.length>0">
+           v-show="selectImg.projectTag!==undefined && selectImg.projectTag.length>0">
         <label class="fw-bolder row m-1 justify-content-start">Archidaily中的Tag</label>
         <div class="gap-2"
              style="white-space: normal;display: inline-flex;overflow-wrap: break-word;word-break: break-word;flex-wrap: wrap">
-          <span v-for="tag in selectImg.projectTag" :key="tag"
+          <span v-for="tag in selectImg.projectTag" :key="tag.key"
                 class="badge d-flex p-2 align-items-center rounded-pill border "
                 style="cursor: pointer" @click="selectTag(tag,true)"
                 :class="tag.color">
@@ -93,182 +275,7 @@
     导出训练集
   </div>
 </template>
-<script>
-import {defineComponent} from "vue";
-import NavigationComponent from "@/components/NavigationComponent.vue";
-import {
-  appendAlert,
-  createClientId, deleteConceptItem, downloadMultipleFilesAsZip, downloadTextFile, loadConceptDataFromDB,
-  saveDataToConceptToDB, updateConceptItem
-} from "@/main.js";
-
-export default defineComponent({
-  components: {NavigationComponent},
-  methods: {
-    isActive(index, path) {
-      if (this.selectImg === "") {
-        return index === 0
-      }
-      return path === this.selectImg.url
-    },
-    colorTag(item) {
-      for (const tag of item.tag) {
-        for (let i = 0; i < this.allTaggers.length; i++) {
-          if (this.allTaggers[i].tag === tag.tag) {
-            this.allTaggers[i].color = 'text-bg-primary';
-          }
-        }
-        for (let i = 0; i < this.selectImg.projectTag.length; i++) {
-          if (this.selectImg.projectTag[i].tag === tag.tag) {
-            this.selectImg.projectTag[i].color = 'text-bg-primary';
-          }
-        }
-        for (let i = 0; i < this.selectImg.searchTag.length; i++) {
-          if (this.selectImg.searchTag[i].tag === tag.tag) {
-            this.selectImg.searchTag[i].color = 'text-bg-primary';
-          }
-        }
-      }
-    },
-    async smallSelected(item) {
-      this.selectImg = item;
-      this.colorTag(item);
-    },
-    async selectTag(tag, flag) {
-      tag.color = 'text-bg-primary';
-      if (flag) {
-        if (this.selectImg !== '') {
-          const foundElement = this.selectImg.tag.find(element => element === tag);
-          const foundElement2 = this.allTaggers.find(element => element === tag);
-          const foundElement3 = this.selectImg.projectTag.find(element => element === tag);
-          const foundElement4 = this.selectImg.searchTag.find(element => element === tag);
-          if (foundElement === undefined && (foundElement2 !== undefined || foundElement3 !== undefined || foundElement4 !== undefined)) {
-            this.selectImg.tag.push(tag)
-            await updateConceptItem('train_images', this.selectImg.name, 'tags', JSON.stringify(this.selectImg.tag));
-            if (foundElement2 !== undefined) {
-              foundElement2.used += 1;
-              await updateConceptItem('user_tags', foundElement2.tag,
-                  'used', foundElement2.used);
-            }
-          }
-        }
-      } else {
-        await this.deleteTag(tag);
-      }
-    },
-    async deleteSelectTag(tag) {
-      if (this.selectImg !== '') {
-        this.selectImg.tag = this.selectImg.tag.filter(element => element.tag !== tag.tag);
-        await updateConceptItem('train_images', this.selectImg.name, 'tags', JSON.stringify(this.selectImg.tag));
-        for (let i = 0; i < this.allTaggers.length; i++) {
-          if (this.allTaggers[i].tag === tag.tag) {
-            this.allTaggers[i].color = 'text-bg-secondary';
-            this.allTaggers[i].used--;
-            await updateConceptItem('user_tags', tag.tag, 'used', this.allTaggers[i].used);
-            break;
-          }
-        }
-        for (let i = 0; i < this.selectImg.projectTag.length; i++) {
-          if (this.selectImg.projectTag[i].tag === tag.tag) {
-            this.selectImg.projectTag[i].color = 'text-bg-secondary';
-            break;
-          }
-        }
-      }
-    },
-    async deleteTag(tag) {
-      for (const images of this.allImages) {
-        images.tag = images.tag.filter(element => element.tag !== tag.tag);
-      }
-      if (this.allTaggers !== '') {
-        this.allTaggers = this.allTaggers.filter(element => element.tag !== tag.tag);
-        await deleteConceptItem('user_tags', tag.name)
-        await updateConceptItem('train_images', this.selectImg.name, 'tags', JSON.stringify(this.selectImg.tag));
-      }
-    },
-    createTags(strArray) {
-      let result = [];
-      for (const strArrayElement of strArray) {
-        result.push({
-          key: "archdaily",
-          tag: strArrayElement,
-          color: 'text-bg-secondary',
-          tagType: "archdaily"
-        })
-      }
-      return result;
-    },
-    // 根据tag长度计算tag文字
-    calculateTag(tag) {
-      if (tag.length > 20) {
-        return tag.substring(0, 20) + '......';
-      }
-      return tag;
-    },
-    userTagSubmit() {
-      if (this.userInput !== undefined && this.userInput !== null && this.userInput !== "") {
-        const foundElement2 = this.allTaggers.find(element => element.tag === this.userInput);
-        if (foundElement2 === undefined || foundElement2 === null) {
-          let d = {
-            name: this.userInput,
-            key: "archdaily",
-            tag: this.userInput,
-            color: 'text-bg-secondary',
-            tagType: "archdaily",
-            used: 0,
-          }
-          this.allTaggers.push(d);
-          saveDataToConceptToDB('user_tags', this.userInput, d)
-          this.userInput = "";
-        } else {
-          appendAlert("tag已存在", "warning")
-        }
-      } else {
-        appendAlert("tag不能为空", "danger")
-      }
-    },
-    // 导出训练数据
-    exportTrainData() {
-      downloadMultipleFilesAsZip(this.allImages);
-    },
-  },
-  data() {
-    return {
-      userInput: '',
-      selectImg: '',
-      allImages: [],
-      allTaggers: [],
-      currentTab: "打标签",
-    }
-  },
-  // 检查是否有图片
-  async beforeCreate() {
-    this.allTaggers = await loadConceptDataFromDB('user_tags');
-    createClientId();
-    const arrays = await loadConceptDataFromDB('train_images');
-    let index = 0;
-    for (const image of arrays) {
-      const tags = JSON.parse(image.tags)
-      this.allImages.push({
-        name: image.name,
-        index: index,
-        url: image.base64,
-        tag: tags,
-        searchTag: this.createTags([image.keyword]),
-        projectTag: this.createTags(image.projecttags),
-      });
-      index++;
-    }
-    if (this.allImages.length > 0) {
-      this.selectImg = this.allImages[0];
-      this.colorTag(this.selectImg);
-    }
-  },
-})
-</script>
 
 <style scoped>
-.m-1:last-child {
-  margin-bottom: 20px;
-}
+
 </style>

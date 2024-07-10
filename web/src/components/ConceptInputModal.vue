@@ -1,4 +1,37 @@
-﻿<template>
+<script setup lang="ts">
+import {ref, nextTick} from 'vue';
+import {addConcept, conceptModalOpenEvent, emitter} from "../main.ts";
+import {Modal} from "bootstrap";
+
+const conceptInput = ref<HTMLInputElement | null>(null);
+const concept = ref('');
+
+emitter.on(conceptModalOpenEvent, () => {
+  const modelElement = document.getElementById('staticBackdrop');
+  if (modelElement) {
+    const myModal = new Modal(modelElement, {
+      backdrop: 'static', // 设置背景为静态
+      keyboard: false // 禁止键盘关闭模态框
+    });
+    // 设置焦点到输入框
+    nextTick(() => {
+      if (conceptInput.value)
+        conceptInput.value.focus();
+    });
+    myModal.show(); // 显示模态框
+  }
+});
+
+
+function keyboardEnter() {
+  const buttonElement = document.getElementById('staticBackdropButton');
+  if (buttonElement)
+    buttonElement.click();
+}
+
+</script>
+
+<template>
   <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
        aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -7,14 +40,14 @@
           <h1 class="modal-title fs-5" id="staticBackdropLabel">请输入lora概念</h1>
         </div>
         <div class="modal-body">
-          <form @submit.prevent="this.keyboardEnter">
+          <form @submit.prevent="keyboardEnter">
             <input type="text" class="form-control" id="message-text" placeholder="lora概念" ref="conceptInput"
-                   v-model="this.concept">
+                   v-model="concept">
           </form>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary"
-                  @click="this.addConcept(this.concept)" data-bs-dismiss="modal"
+                  @click="addConcept(concept)" data-bs-dismiss="modal"
                   id="staticBackdropButton">确定
           </button>
         </div>
@@ -22,39 +55,7 @@
     </div>
   </div>
 </template>
-<script lang="ts">
 
-import {addConcept, conceptModalOpenEvent, emitter} from "@/main";
-import {Modal} from "bootstrap";
+<style scoped>
 
-export default {
-  data() {
-    return {
-      concept: "",
-      isProgress: true,
-      message: "请先上传图片!",
-      isRendering: false,
-      progressValue: 0,
-    }
-  },
-  mounted() {
-    emitter.on(conceptModalOpenEvent, () => {
-      const myModal = new Modal(document.getElementById('staticBackdrop'), {
-        backdrop: 'static', // 设置背景为静态
-        keyboard: false // 禁止键盘关闭模态框
-      });
-      // 设置焦点到输入框
-      this.$nextTick(() => {
-        this.$refs.conceptInput.focus();
-      });
-      myModal.show(); // 显示模态框
-    })
-  },
-  methods: {
-    addConcept,
-    keyboardEnter() {
-      document.getElementById('staticBackdropButton').click()
-    }
-  }
-}
-</script>
+</style>

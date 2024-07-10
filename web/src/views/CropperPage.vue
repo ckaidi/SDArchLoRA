@@ -1,4 +1,150 @@
-﻿<template>
+<script setup lang="ts">
+
+import {CropperOptions} from "../types/CropperOptions.ts";
+import {ref} from "vue";
+import {loadSingleDataFromDB, saveTaggerImageToDB, spiderServer} from "../main.ts";
+import {useRoute} from "vue-router";
+import {ImgData} from "../types/ImgData.ts";
+import {ProjectData} from "../types/ProjectData.ts";
+import {Previews} from "../types/Previews.ts";
+import VueCropper from "vue-cropper";
+// import {VueCropper} from "vue-cropper/next";
+// import VueCropper from "../types/vue-cropper"
+
+const route = useRoute();
+const option = ref<CropperOptions>(new CropperOptions());
+const lists = ref<any[]>([]);
+const cropper = ref<typeof VueCropper>(VueCropper);
+const previews = ref<Previews>(new Previews());
+
+// create方法
+let temp = route.query.imgUrl;
+if (temp) {
+  temp = temp.toString().replace('medium_jpg', 'large_jpg');
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', 'http://' + spiderServer + '/img2base64', true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function () {
+    if (xhr.status === 200) {
+      const result = JSON.parse(xhr.responseText)
+      const cutElement = document.getElementById('cut');
+      if (cutElement) {
+        cutElement.style.width = result['Width'] + 'px';
+        cutElement.style.height = result['Height'] + 'px';
+      }
+      option.value.img = result['Base64'];
+      lists.value.push({
+        img: result['Base64'],
+      });
+    } else {
+      alert('网络错误，请重试')
+    }
+  };
+  xhr.send(temp);
+}
+
+function nextStep() {
+  document.createElement('a');
+  // 输出
+  cropper.value.getCropData(async (data: any) => {
+    let document_id = route.query.document_id;
+    const project = (await loadSingleDataFromDB('projects', 'name', document_id)) as ProjectData;
+    const imgName = route.query.imgName?.toString()
+    if (imgName) {
+      let imgData = new ImgData(imgName, data);
+      if (project) {
+        if (project.content.author !== "") {
+          imgData.projecttags.push(project.content.author);
+        }
+        if (project.content.categories !== "") {
+          let tags = project.content.categories.split(',')
+          for (const tagsKey of tags) {
+            if (tagsKey !== "")
+              imgData.projecttags.push(tagsKey);
+          }
+        }
+        if (project.content.location !== "") {
+          imgData.projecttags.push(project.content.location);
+        }
+        if (project.content.meta_description !== "") {
+          imgData.projecttags.push(project.content.meta_description);
+        }
+        if (project.content.offices !== "") {
+          let tags = project.content.offices.split(',')
+          for (const tagsKey of tags) {
+            if (tagsKey !== "")
+              imgData.projecttags.push(tagsKey);
+          }
+        }
+        if (project.content.tags !== "") {
+          let tags = project.content.tags.split(',')
+          for (const tagsKey of tags) {
+            if (tagsKey !== "")
+              imgData.projecttags.push(tagsKey);
+          }
+        }
+      }
+      const kw = sessionStorage.getItem('keyword');
+      if (kw) {
+        imgData.keyword = kw;
+        await saveTaggerImageToDB(imgData)
+        window.location.href = '#/img2img'
+      }
+    }
+  })
+}
+
+async function skip() {
+  document.createElement('a');
+  // 输出
+  let document_id = route.query.document_id;
+  const project = await loadSingleDataFromDB('projects', 'name', document_id) as ProjectData;
+  const imgName = route.query.imgName?.toString();
+  if (imgName) {
+    let imgData = new ImgData(imgName, option.value.img);
+    imgData.projecttags = []
+    imgData.tags = '[]'
+    if (project.content.author !== "") {
+      imgData.projecttags.push(project.content.author);
+    }
+    if (project.content.categories !== "") {
+      let tags = project.content.categories.split(',')
+      for (const tagsKey of tags) {
+        if (tagsKey !== "")
+          imgData.projecttags.push(tagsKey);
+      }
+    }
+    if (project.content.location !== "") {
+      imgData.projecttags.push(project.content.location);
+    }
+    if (project.content.meta_description !== "") {
+      imgData.projecttags.push(project.content.meta_description);
+    }
+    if (project.content.offices !== "") {
+      let tags = project.content.offices.split(',')
+      for (const tagsKey of tags) {
+        if (tagsKey !== "")
+          imgData.projecttags.push(tagsKey);
+      }
+    }
+    if (project.content.tags !== "") {
+      let tags = project.content.tags.split(',')
+      for (const tagsKey of tags) {
+        if (tagsKey !== "")
+          imgData.projecttags.push(tagsKey);
+      }
+    }
+    const kw = sessionStorage.getItem('keyword');
+    if (kw) {
+      imgData.keyword = kw;
+      await saveTaggerImageToDB(imgData)
+      window.location.href = '#/img2img'
+    }
+  }
+}
+</script>
+
+<template>
   <div class="cut" id="cut" style="width: 1600px;height: 1200px">
     <vue-cropper ref="cropper" v-bind="option"></vue-cropper>
   </div>
@@ -27,185 +173,7 @@
     </div>
   </div>
 </template>
-<script>
-import 'vue-waterfall-plugin-next/dist/style.css';
-import 'vue-cropper/dist/vue-cropper.umd.js';
-import {loadSingleDataFromDB, saveTaggerImageToDB, spiderServer} from "@/main.js";
-
-export default {
-  data() {
-    return {
-      cropperW: 1500,
-      cropperH: 1000,
-      model: false,
-      modelSrc: '',
-      crap: false,
-      previews: {},
-      lists: [],
-      option: {
-        info: true,
-        img: "",
-        size: 1,
-        full: true,
-        outputType: "jpeg",
-        canMove: true,
-        fixedBox: false,
-        original: true,
-        canMoveBox: true,
-        autoCrop: true,
-        // 只有自动截图开启 宽度高度才生效
-        autoCropWidth: 1024,
-        autoCropHeight: 1024,
-        centerBox: false,
-        high: false,
-        cropData: {},
-        enlarge: 1,
-        mode: 'cover',
-        maxImgSize: 40000,
-        limitMinSize: [50, 50],
-        fixed: true,
-        fixedNumber: [1, 1],
-        fillCover: '',
-        canScale: true,
-      },
-      show: true
-    }
-  },
-  created() {
-    let temp = this.$route.query.imgUrl;
-    if (temp !== undefined) {
-      temp = temp.replace('medium_jpg', 'large_jpg');
-      const xhr = new XMLHttpRequest();
-      const that = this
-      xhr.open('POST', 'http://' + spiderServer + '/img2base64', true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.onload = function () {
-        if (xhr.status === 200) {
-          const result = JSON.parse(xhr.responseText)
-          document.getElementById('cut').style.width = result['Width'] + 'px';
-          document.getElementById('cut').style.height = result['Height'] + 'px';
-          that.option.img = result['Base64'];
-          that.lists.push({
-            img: result['Base64'],
-          });
-        } else {
-          alert('网络错误，请重试')
-        }
-      };
-      xhr.send(temp);
-    }
-  },
-  methods: {
-    nextStep() {
-      document.createElement('a');
-      // 输出
-      this.$refs.cropper.getCropData(async (data) => {
-        let document_id = this.$route.query.document_id;
-        const project = await loadSingleDataFromDB('projects', 'name', document_id);
-        let imgData = {name: this.$route.query.imgName, base64: data}
-        imgData.projecttags = []
-        imgData.tags = '[]';
-        if (project !== undefined) {
-          if (project.content.author !== "") {
-            imgData.projecttags.push(project.content.author);
-          }
-          if (project.content.categories !== "") {
-            let tags = project.content.categories.split(',')
-            for (const tagsKey of tags) {
-              if (tagsKey !== "")
-                imgData.projecttags.push(tagsKey);
-            }
-          }
-          if (project.content.location !== "") {
-            imgData.projecttags.push(project.content.location);
-          }
-          if (project.content.meta_description !== "") {
-            imgData.projecttags.push(project.content.meta_description);
-          }
-          if (project.content.offices !== "") {
-            let tags = project.content.offices.split(',')
-            for (const tagsKey of tags) {
-              if (tagsKey !== "")
-                imgData.projecttags.push(tagsKey);
-            }
-          }
-          if (project.content.tags !== "") {
-            let tags = project.content.tags.split(',')
-            for (const tagsKey of tags) {
-              if (tagsKey !== "")
-                imgData.projecttags.push(tagsKey);
-            }
-          }
-        }
-        imgData.keyword = sessionStorage.getItem('keyword');
-        await saveTaggerImageToDB(this.$route.query.imgName, imgData)
-        window.location = '#/img2img'
-      })
-    },
-    async skip() {
-      document.createElement('a');
-      // 输出
-      let document_id = this.$route.query.document_id;
-      const project = await loadSingleDataFromDB('projects', 'name', document_id);
-      let imgData = {name: this.$route.query.imgName, base64: this.option.img}
-      imgData.projecttags = []
-      imgData.tags = '[]'
-      if (project.content.author !== "") {
-        imgData.projecttags.push(project.content.author);
-      }
-      if (project.content.categories !== "") {
-        let tags = project.content.categories.split(',')
-        for (const tagsKey of tags) {
-          if (tagsKey !== "")
-            imgData.projecttags.push(tagsKey);
-        }
-      }
-      if (project.content.location !== "") {
-        imgData.projecttags.push(project.content.location);
-      }
-      if (project.content.meta_description !== "") {
-        imgData.projecttags.push(project.content.meta_description);
-      }
-      if (project.content.offices !== "") {
-        let tags = project.content.offices.split(',')
-        for (const tagsKey of tags) {
-          if (tagsKey !== "")
-            imgData.projecttags.push(tagsKey);
-        }
-      }
-      if (project.content.tags !== "") {
-        let tags = project.content.tags.split(',')
-        for (const tagsKey of tags) {
-          if (tagsKey !== "")
-            imgData.projecttags.push(tagsKey);
-        }
-      }
-      imgData.keyword = sessionStorage.getItem('keyword');
-      await saveTaggerImageToDB(this.$route.query.imgName, imgData)
-      window.location = '#/img2img'
-    },
-    // 实时预览函数
-    down(type) {
-      const aLink = document.createElement('a');
-      aLink.download = this.$route.query.imgName
-      // 输出
-      if (type === 'blob') {
-        this.$refs.cropper.getCropBlob((data) => {
-          aLink.href = window.URL.createObjectURL(data)
-          aLink.click()
-        })
-      } else {
-        this.$refs.cropper.getCropData((data) => {
-          aLink.href = data
-          aLink.click()
-        })
-      }
-    }
-  },
-}
-</script>
-
-<style>
+<style scoped>
 * {
   margin: 0;
   padding: 0;

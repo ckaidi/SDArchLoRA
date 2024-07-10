@@ -1,11 +1,22 @@
+<script setup lang="ts">
+import ConceptInputModal from "./components/ConceptInputModal.vue";
+import ConceptSelectModal from "./components/ConceptSelectModal.vue";
+import {conceptModalOpenEvent, emitter} from "./main.ts";
+import TipsModal from "./components/TipsModal.vue";
+
+function addConcept() {
+  emitter.emit(conceptModalOpenEvent, 'progress');
+}
+</script>
+
 <template>
   <div id="liveAlertPlaceholder" class="container-fluid align-self-center align-content-center"
-       style="position: absolute;z-index: 9999;">
+       style="position: absolute; z-index: 9999;">
   </div>
-  <ConceptInputModal/>
-  <ConceptSelectModal/>
-  <TipsModal/>
-  <router-view/>
+  <ConceptInputModal v-show="false"/>
+  <ConceptSelectModal v-show="false"/>
+  <TipsModal v-show="false"/>
+  <router-view></router-view>
   <div class="position-fixed bottom-0 end-0 mb-3 me-3 rounded-circle bg-primary">
     <button class="btn btn-primary py-2 d-flex align-items-center justify-content-center bi-r-circle "
             data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="增加概念"
@@ -22,28 +33,14 @@
   </div>
 
 </template>
-<script>
-import MoreImagesPage from "@/views/MoreImagesPage.vue";
-import ConceptInputModal from "@/components/ConceptInputModal.vue";
-import ConceptSelectModal from "@/components/ConceptSelectModal.vue";
-import {conceptModalOpenEvent, emitter, OneDay} from "@/main.js";
-import TipsModal from "@/components/TipsModal.vue";
 
-export default {
-  components: {MoreImagesPage, ConceptInputModal, ConceptSelectModal, TipsModal},
-  methods: {
-    addConcept() {
-      emitter.emit(conceptModalOpenEvent, 'progress');
-    }
-  }
-}
-</script>
-
-<style>
+<style scoped>
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  height: 100%;
   text-align: center;
   color: #2c3e50;
   margin: 0;

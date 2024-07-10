@@ -1,4 +1,25 @@
-﻿<template>
+<script setup lang="ts">
+
+import {addConcept, emitter, selectModalOpenEvent} from "../main.ts";
+import {onMounted, ref} from "vue";
+import {Modal} from "bootstrap";
+
+const concept = ref("")
+onMounted(() => {
+  emitter.on(selectModalOpenEvent, () => {
+    const modalElement = document.getElementById('selectStaticBackdrop');
+    if (modalElement) {
+      const myModal = new Modal(modalElement, {
+        backdrop: 'static', // 设置背景为静态
+        keyboard: false // 禁止键盘关闭模态框
+      });
+      myModal.show(); // 显示模态框
+    }
+  })
+});
+</script>
+
+<template>
   <div class="modal fade" id="selectStaticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
        aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -30,31 +51,7 @@
     </div>
   </div>
 </template>
-<script>
 
-import {addConcept, conceptModalOpenEvent, emitter, selectModalOpenEvent} from "@/main";
+<style scoped>
 
-export default {
-  data() {
-    return {
-      concept: "",
-      isProgress: true,
-      message: "请先上传图片!",
-      isRendering: false,
-      progressValue: 0,
-    }
-  },
-  mounted() {
-    emitter.on(selectModalOpenEvent, () => {
-      const myModal = new bootstrap.Modal(document.getElementById('selectStaticBackdrop'), {
-        backdrop: 'static', // 设置背景为静态
-        keyboard: false // 禁止键盘关闭模态框
-      });
-      myModal.show(); // 显示模态框
-    })
-  },
-  methods: {
-    addConcept,
-  }
-}
-</script>
+</style>

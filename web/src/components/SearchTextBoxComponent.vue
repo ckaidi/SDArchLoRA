@@ -1,3 +1,28 @@
+<script setup lang="ts">
+
+import {ref} from "vue";
+import {saveDataToConceptToDB, searchArchDaily} from "../main.ts";
+
+// 定义一个接口用于 props
+interface Props {
+  onReceiveImg: (arg: any) => void;  // 假设参数类型是 any，根据实际情况修改
+}
+
+const props = defineProps<Props>();
+const keyword = ref("")
+
+function search() {
+  sessionStorage.setItem('keyword', keyword.value)
+  saveDataToConceptToDB('searches', {
+    name: keyword.value,
+    page_count: 1,
+    project_count: 0,
+    date: Date.now()
+  })
+  searchArchDaily(keyword.value, props.onReceiveImg)
+}
+</script>
+
 <template>
   <div class="container-fluid mt-2 mb-2 row p-0 m-0">
     <div class="col-10 p-0">
@@ -8,48 +33,7 @@
     </div>
   </div>
 </template>
-<script>
-import {continueSearchArchDaily, getKeyword, saveDataToConceptToDB, searchArchDaily} from "@/main.js";
 
-export default {
-  methods: {
-    search() {
-      sessionStorage.setItem('keyword', this.keyword)
-      saveDataToConceptToDB('searches', this.keyword, {
-        name: this.keyword,
-        page_count: 1,
-        project_count: 0,
-        date: Date.now()
-      })
-      searchArchDaily(this.keyword, this.onReceiveImg)
-    },
-    showMore() {
-      if (this.keyword === '') {
-        this.keyword = sessionStorage.getItem('keyword');
-      }
-      continueSearchArchDaily(this.keyword, this.onReceiveImg)
-    },
-  },
-  props: {
-    onReceiveImg: null
-  },
-  async beforeCreate() {
-    // await getConcept();
-    const keyword = await getKeyword();
-    if (keyword !== null) {
-      this.keyword = keyword;
-    }
-  },
-  data() {
-    return {
-      allOptions: [
-        {
-          key: "分类",
-          value: ['a', 'b']
-        }
-      ],
-      keyword: ""
-    }
-  }
-}
-</script>
+<style scoped>
+
+</style>

@@ -1,3 +1,13 @@
+<script setup lang="ts">
+
+import NavigationComponent from "../components/NavigationComponent.vue";
+import SearchComponent from "../components/SearchComponent.vue";
+import SelectedImgComponent from "../components/SelectedImgComponent.vue";
+import {ref} from "vue";
+
+const currentTab = ref("搜图");
+</script>
+
 <template>
   <NavigationComponent :activate-tab="currentTab"/>
   <div class="container-fluid row p-0 m-0">
@@ -9,19 +19,7 @@
     </div>
   </div>
 </template>
-<script>
-import 'vue-waterfall-plugin-next/dist/style.css'
-import SelectedImgComponent from "@/components/SelectedImgComponent.vue";
-import SearchComponent from "@/components/SearchComponent.vue";
-import NavigationComponent from "@/components/NavigationComponent.vue";
 
+<style scoped>
 
-export default {
-  components: {SelectedImgComponent, NavigationComponent, SearchComponent},
-  data() {
-    return {
-      currentTab: "搜图",
-    }
-  },
-}
-</script>
+</style>
