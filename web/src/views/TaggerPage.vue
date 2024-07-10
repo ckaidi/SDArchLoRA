@@ -264,8 +264,6 @@ export default defineComponent({
       this.colorTag(this.selectImg);
     }
   },
-  async created() {
-  },
 })
 </script>
 
