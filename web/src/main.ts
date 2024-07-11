@@ -14,6 +14,9 @@ import router from "./router";
 import JSZip from 'jszip';
 import {ImageDB} from "./types/ImageDB.ts";
 import {ProjectDB} from "./types/ProjectDB.ts";
+import {ConceptDB} from "./types/ConceptDB.ts";
+import {PageImageDB} from "./types/PageImageDB.ts";
+import {SearchDB} from "./types/SearchDB.ts";
 
 export const emitter = mitt()
 export const spiderServer = '127.0.0.1:8081'
@@ -188,26 +191,53 @@ export async function addConcept(concept: string) {
 
 // 保存数据到概念数据库
 export async function saveDataToConceptToDB(tableName: string, buffer: object) {
-    const concept = sessionStorage.getItem('concept')
+    const concept = await getConcept();
     if (!concept) return;
     const db = await openDataBase(concept, (_) => {
     });
 
+
     // 创建一个读写事务，目标对象存储空间为images
-    const transaction = db.transaction([tableName], "readwrite");
-    // 获取对象存储空间
-    const store = transaction.objectStore(tableName);
-    // 向对象存储空间中添加或更新一条记录
-    const imgRequest = store.put(buffer);
+    console.log('open table: ', tableName);
+    try {
+        const transaction = db.transaction([tableName], "readwrite");
+        // 获取对象存储空间
+        const store = transaction.objectStore(tableName);
+        // 向对象存储空间中添加或更新一条记录
+        const imgRequest = store.put(buffer);
 
-    imgRequest.onsuccess = () => {
-        console.log("Image saved successfully!");
-    };
+        imgRequest.onsuccess = () => {
+            console.log("Image saved successfully!");
+        };
 
-    imgRequest.onerror = (e) => {
-        const request = e.target as IDBRequest;
-        console.error("Error saving the image:", request.error);
-    };
+        imgRequest.onerror = (e) => {
+            const request = e.target as IDBRequest;
+            console.error("Error saving the image:", request.error);
+        };
+    } catch (e) {
+        console.error('Error saving the image: ' + e);
+    }
+}
+
+// 保存图片到page data里
+async function saveImageToPageData(buffer: PageImageDB) {
+    const concept = await getConcept();
+    if (!concept) return;
+    const keyword = sessionStorage.getItem('keyword');
+    if (keyword == null) return;
+    const searchData = await loadSingleDataFromDBInternal<SearchDB>(concept, "searches", "name", keyword);
+    const pagesData = await loadDataFromDB<SearchDB>(concept, "searches");
+    if (pagesData.length > 0) {
+        const lastPageData = pagesData[pagesData.length - 1];
+        if (lastPageData.images.length < 50) {
+            lastPageData.images.push(buffer);
+            const db = await openDataBase(concept, (_) => {
+            });
+            saveDataToConceptToDB("searches",);
+        }
+    }
+
+    // 添加新的page data
 }
 
 //
@@ -293,18 +323,23 @@ export async function updateConceptItem(tableName: string, key: IDBValidKey | ID
     };
 }
 
+// 从数据库名和表名一直的数据库中读取数据
+export function loadSingleDataFromDB<T>(dbname: string, keyPathName: string, key: any): Promise<T | null> {
+    return loadSingleDataFromDBInternal<T>(dbname, dbname, keyPathName, key);
+}
 
-export function loadSingleDataFromDB(dbname: string, keyPathName: string, key: any) {
+// 从数据库中读取指定key的数据
+function loadSingleDataFromDBInternal<T>(dbName: string, tableName: string, keyPathName: string, key: any): Promise<T | null> {
     return new Promise(async (resolve, reject) => {
-        const db = await openDataBase(dbname, (db_temp) => {
+        const db = await openDataBase(dbName, (db_temp) => {
             // 关闭新创建的数据库
             db_temp.close();
             // 删除新创建的数据库
-            indexedDB.deleteDatabase(dbname);
-            resolve(undefined);
+            indexedDB.deleteDatabase(dbName);
+            resolve(null);
         });
-        const transaction = db.transaction([dbname], "readonly");
-        const store = transaction.objectStore(dbname);
+        const transaction = db.transaction([tableName], "readonly");
+        const store = transaction.objectStore(tableName);
         const index = store.index(keyPathName + "Index"); // 假设索引名为"nameIndex"
         const getRequest = index.get(key);
 
@@ -397,7 +432,7 @@ function base64ToBlob(base64: string, mimeType: string) {
     return new Blob([ab], {type: mimeType});
 }
 
-export function loadDataFromDB(dbname: string, tableName: string): Promise<any[]> {
+function loadDataFromDB<T>(dbname: string, tableName: string): Promise<T[]> {
     return new Promise(async (resolve, _) => {
         if (dbname === null) {
             resolve([])
@@ -419,11 +454,14 @@ export function loadDataFromDB(dbname: string, tableName: string): Promise<any[]
         const transaction = db.transaction([tableName], 'readonly');
         const store = transaction.objectStore(tableName);
         const cursorRequest = store.openCursor();
-        let array: any[] = [];
+        let array: T[] = [];
         cursorRequest.onsuccess = (e) => {
             const cursor = (e.target as IDBRequest<IDBCursorWithValue>).result;
             if (cursor) {
-                array.push(cursor.value);
+                const item = cursor.value as T;
+                if (item) {
+                    array.push(cursor.value);
+                }
                 cursor.continue();
             } else {
                 resolve(array);
@@ -446,14 +484,14 @@ function once(event: any, handler: (arg: any) => void) {
 }
 
 // 获取训练概念
-export function getConcept() {
+export function getConcept(): Promise<string> {
     return new Promise(async (resolve, _) => {
         const concept = sessionStorage.getItem('concept');
-        if (concept === null) {
-            const concepts = await loadDataFromDB('concepts', 'concepts')
+        if (concept === null || concept == undefined) {
+            const concepts = await loadDataFromDB<ConceptDB>('concepts', 'concepts')
             if (concepts !== null && concepts !== undefined && concepts.length > 0) {
-                sessionStorage.setItem('concept', concepts[0].content);
-                resolve(concepts[0].content);
+                sessionStorage.setItem('concept', concepts[0].name);
+                resolve(concepts[0].name);
                 return;
             }
 

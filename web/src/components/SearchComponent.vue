@@ -57,7 +57,7 @@ function addImages(imageText: string) {
   } else {
     // 保存图片信息
     saveImageToDB(new ImageDB(jsonData.url, jsonData.name, jsonData.document_id));
-    saveDataToConceptToDB('images', {
+    saveDataToConceptToDB('searches', {
       name: jsonData.name,
       keyword: [sessionStorage.getItem('keyword')],
       url: jsonData.url,

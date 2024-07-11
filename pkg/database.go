@@ -1,12 +1,7 @@
 package pkg
 
 import (
-	"fmt"
-	"github.com/fatih/color"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
-	"gorm.io/gorm/logger"
 )
 
 // ProjectDatabase 项目数据库
@@ -115,30 +110,31 @@ func AddProjectToDatabase(project ResultDetail) *ProjectDatabase {
 	}
 	projectDb.Photographers = str
 
-	host := "192.168.42.57"
-	user := "spider"
-	password := "nqf3dAHHM@RsrZGt"
-	dbname := "spider"
-	port := "5432"
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
-		host, user, password, dbname, port)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
-	yellow := color.New(color.FgYellow).PrintlnFunc()
-	if err != nil {
-		yellow("failed to connect database")
-		return &projectDb
-	}
-	// 迁移 schema
-	err = db.AutoMigrate(&ProjectDatabase{})
-	if err != nil {
-		yellow(err.Error())
-		return &projectDb
-	}
-	// 创建
-	result := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&projectDb)
-	if result.Error != nil {
-		yellow(result.Error.Error())
-		return &projectDb
-	}
 	return &projectDb
+	//host := "192.168.42.57"
+	//user := "spider"
+	//password := "nqf3dAHHM@RsrZGt"
+	//dbname := "spider"
+	//port := "5432"
+	//dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
+	//	host, user, password, dbname, port)
+	//db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	//yellow := color.New(color.FgYellow).PrintlnFunc()
+	//if err != nil {
+	//	yellow("failed to connect database")
+	//	return &projectDb
+	//}
+	//// 迁移 schema
+	//err = db.AutoMigrate(&ProjectDatabase{})
+	//if err != nil {
+	//	yellow(err.Error())
+	//	return &projectDb
+	//}
+	//// 创建
+	//result := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&projectDb)
+	//if result.Error != nil {
+	//	yellow(result.Error.Error())
+	//	return &projectDb
+	//}
+	//return &projectDb
 }
