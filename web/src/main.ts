@@ -226,8 +226,8 @@ async function saveImageToPageData(buffer: PageImageDB) {
     const keyword = sessionStorage.getItem('keyword');
     if (keyword == null) return;
     const searchData = await loadSingleDataFromDBInternal<SearchDB>(concept, "searches", "name", keyword);
-    const pagesData = await loadDataFromDB<SearchDB>(concept, "searches");
-    if (pagesData.length > 0) {
+    if (!searchData) return;
+    if (searchData.pages_data.length > 0) {
         const lastPageData = pagesData[pagesData.length - 1];
         if (lastPageData.images.length < 50) {
             lastPageData.images.push(buffer);
@@ -274,6 +274,20 @@ export function searchArchDaily(keyword: string, onReceiveImg: (arg: any) => voi
     if (keyword !== "") {
         const ws = new WebSocket("ws://" + spiderServer + "/archdaily?keyword=" + keyword + "&page=1&projectCount=0");
         searchCore(ws, onReceiveImg);
+    }
+}
+
+export async function addOrUpdateSearchToDB(keyword: string, page_count: number, project_count: number) {
+    const concept = await getConcept();
+    const searchData = await loadSingleDataFromDB<SearchDB>(concept, "name", keyword);
+    if (searchData) {
+        // 存在则更更新
+        searchData.page_count = page_count;
+        searchData.project_count = project_count;
+        await saveDataToConceptToDB(concept, searchData);
+    } else {
+        // 不存在则添加
+        await saveDataToConceptToDB("searches", new SearchDB(keyword, Date.now(), page_count, project_count));
     }
 }
 
