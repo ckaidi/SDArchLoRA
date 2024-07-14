@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -12,7 +11,6 @@ import (
 	_ "image/png"  // Import PNG format
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 )
@@ -36,33 +34,7 @@ func Get(webUrl string, callback func(*http.Response)) {
 func fetch(webUrl string, method string, callback func(*http.Response)) {
 	for {
 		var client *http.Client
-		if useProxy {
-			proxy := GetProxy()
-			var parse *url.URL
-			var err error
-			if proxy.Https {
-				parse, err = url.Parse("https://" + proxy.Addr)
-			} else {
-				parse, err = url.Parse("http://" + proxy.Addr)
-			}
-			if err != nil {
-				fmt.Print(err.Error())
-				a := time.Second
-				time.Sleep(a)
-				continue
-			}
-			client = &http.Client{
-				Transport: &http.Transport{
-					Proxy: http.ProxyURL(parse),
-					TLSClientConfig: &tls.Config{
-						InsecureSkipVerify: true,
-					},
-				},
-				Timeout: 10 * time.Second,
-			}
-		} else {
-			client = &http.Client{}
-		}
+		client = &http.Client{}
 		request, err := http.NewRequest(method, webUrl, nil)
 		request.Header.Set("Connection", "keep-alive")
 		request.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36")

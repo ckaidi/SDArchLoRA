@@ -38,6 +38,9 @@ type ImageDetail struct {
 	Name       string `json:"name"`
 	Url        string `json:"url"`
 	DocumentId string `json:"document_id"`
+	Page       int    `json:"page"`
+	Project    int    `json:"project"`
+	IsLast     bool   `json:"is_last"`
 }
 
 // ImageGroup json模型兼数据模型
@@ -112,8 +115,6 @@ func GetArchdailyImagesRoute(w http.ResponseWriter, r *http.Request) {
 		handle(err)
 	}(conn)
 	getImagesUrl(r, conn, keyword, page)
-	// 发送一个结束标志给客户端，表示数据发送完毕
-	err = conn.WriteMessage(websocket.TextMessage, []byte("end"))
 	handle(err)
 }
 
@@ -139,19 +140,17 @@ func getImagesUrl(r *http.Request, conn *websocket.Conn, key string, page int) {
 				continue
 			}
 			if allCount > 50 {
-				err = conn.WriteMessage(websocket.TextMessage, []byte("chenkaidiConfig/"+strconv.Itoa(page)+"/"+strconv.Itoa(index)))
-				handle(err)
 				return
 			}
 			green := color.New(color.FgGreen).PrintlnFunc()
 			green("[项目:]" + project.MetaDescription)
-			analyseProject(conn, project, &allCount)
+			analyseProject(conn, project, page, index, &allCount)
 		}
 		getImagesUrl(r, conn, key, page+1)
 	})
 }
 
-func analyseProject(conn *websocket.Conn, project ResultDetail, allCount *int) {
+func analyseProject(conn *websocket.Conn, project ResultDetail, page int, index int, allCount *int) {
 	dbModel := AddProjectToDatabase(project)
 	if dbModel != nil {
 		err := conn.WriteJSON(dbModel)
@@ -170,22 +169,23 @@ func analyseProject(conn *websocket.Conn, project ResultDetail, allCount *int) {
 		images := reader.Find("img.gallery-thumbs-img")
 		green := color.New(color.FgGreen).PrintlnFunc()
 		green("找到" + strconv.Itoa(images.Length()) + "张图片")
+		imagesLength := images.Length() - 1
 		images.Each(func(i int, selection *goquery.Selection) {
 			imageUrl := selection.AttrOr("src", "")
-			//imageUrl = strings.Replace(imageUrl, "medium_jpg", "small_jpg", 1)
 			title := selection.AttrOr("alt", "标题")
 			if imageUrl != "" {
-				//lastText := strings.Split(imageUrl, "/")
-				//fmt.Print(lastText)
 				formattedNum := fmt.Sprintf("%03d", i)
 				green("[图片" + formattedNum + ":]" + title)
+				*allCount += 1
 				err = conn.WriteJSON(ImageDetail{
 					Name:       title,
 					Url:        imageUrl,
 					DocumentId: project.DocumentId,
+					Page:       page,
+					Project:    index,
+					IsLast:     *allCount >= 50 && i == imagesLength,
 				})
 				handle(err)
-				*allCount += 1
 			}
 		})
 	})

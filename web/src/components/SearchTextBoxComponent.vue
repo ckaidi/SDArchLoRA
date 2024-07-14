@@ -1,12 +1,11 @@
 <script setup lang="ts">
 
 import {ref} from "vue";
-import {saveDataToConceptToDB, searchArchDaily} from "../main.ts";
-import {SearchDB} from "../types/SearchDB.ts";
+import {addOrUpdateSearchToDB, continueSearchArchDaily, searchArchDaily} from "../main.ts";
 
 // 定义一个接口用于 props
 interface Props {
-  onReceiveImg: (arg: any) => void;  // 假设参数类型是 any，根据实际情况修改
+  onReceiveImg: (arg: string) => void;  // 假设参数类型是 any，根据实际情况修改
 }
 
 const props = defineProps<Props>();
@@ -14,8 +13,15 @@ const keyword = ref("")
 
 function search() {
   sessionStorage.setItem('keyword', keyword.value)
-  saveDataToConceptToDB('searches', new SearchDB(keyword.value, Date.now(), 1, 0))
-  searchArchDaily(keyword.value, props.onReceiveImg)
+  addOrUpdateSearchToDB(keyword.value);
+  searchArchDaily(keyword.value, props.onReceiveImg);
+}
+
+function showMore() {
+  if (keyword.value === '') {
+    keyword.value = sessionStorage.getItem('keyword') as string;
+  }
+  continueSearchArchDaily(keyword.value, props.onReceiveImg)
 }
 </script>
 
