@@ -6,6 +6,7 @@ export class TrainImage {
     public keyword: string;
     public tags: string[];
     public base64: string;
+    public show: boolean;
 
     constructor(name: string, url: string, page: number, indexInSearch: number, keyword: string, base64: string) {
         this.name = name;
@@ -15,5 +16,6 @@ export class TrainImage {
         this.keyword = keyword;
         this.tags = [];
         this.base64 = base64;
+        this.show = false;
     }
 }

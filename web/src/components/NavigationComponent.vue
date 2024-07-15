@@ -11,6 +11,10 @@ let navigations = ref([
     name: "搜图"
   },
   {
+    path: "#/cropper",
+    name: "裁剪"
+  },
+  {
     path: "#/img2img",
     name: "打标签"
   }

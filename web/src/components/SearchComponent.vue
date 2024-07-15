@@ -202,16 +202,4 @@ function mouseleave(item: ImageItem) {
 </template>
 
 <style scoped>
-.cardButtonShow {
-  visibility: visible;
-}
-
-.cardButtonHide {
-  visibility: hidden;
-}
-
-.item img {
-  width: 100%;
-  height: 100%;
-}
 </style>
