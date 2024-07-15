@@ -7,7 +7,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/css/bootstrap.css'
 import {v4} from 'uuid'
 import App from './App.vue'
-import {createApp} from 'vue'
+import {createApp, reactive, ref} from 'vue'
 import VueCookies from 'vue-cookies'
 import VueCropper from 'vue-cropper';
 import router from "./router";
@@ -19,12 +19,16 @@ import {SearchDB} from "./types/SearchDB.ts";
 import {PageDataDB} from "./types/PageDataDB.ts";
 import {getRandomString} from "./utils.ts";
 import {PageImageDB} from "./types/PageImageDB.ts";
+import {ImageItem} from "./types/ImageItem.ts";
+import {TrainImage} from "./types/TrainImage.ts";
 
 type Events = {
+    selectModalOpenEvent: void;
     stringValue: string;
     conceptModalOpenEvent: void;
     conceptModalCloseEvent: string;
     keywordChangedEvent: string;
+    addTrainImg: ImageItem;
 };
 
 export let searchImageCount = 0;
@@ -34,13 +38,28 @@ export const selectModalOpenEvent = 'selectModalOpenEvent'
 export const conceptModalOpenEvent = 'conceptModalOpenEvent'
 export const conceptModalCloseEvent = 'conceptModalCloseEvent'
 
+export const initFinish = ref(false);
+export const concept = ref('');
+export const keyword = ref("");
+export const showSearchImages = ref<ImageItem[]>([]);
+export const trainImages = ref<TrainImage[]>([]);
+export const trainHash = reactive<{ [key: string]: any }>({});
+
 const instance = createApp(App)
 instance.use(router)
 instance.use(VueCookies)
 instance.use(VueCropper)
 instance.mount('#app')// 实现一个 once 功能
 const alertPlaceholder = document.getElementById('liveAlertPlaceholder') as HTMLElement
-initDataBase().then();
+initDataBase().then(async () => {
+    const images = await loadConceptDataFromDB<TrainImage>('train_images');
+    trainImages.value = [];
+    for (const trainImage of images) {
+        trainImages.value.push(trainImage);
+        trainHash[trainImage.url] = trainImage;
+    }
+    initFinish.value = true;
+});
 
 // 插入概念数据库和项目数据库以及图片数据库
 async function initDataBase() {
@@ -600,10 +619,10 @@ export async function deleteConceptItem(tableName: string, key: string) {
     store.delete(key);
 }
 
-export function loadConceptDataFromDB(tableName: string) {
-    const concept = sessionStorage.getItem('concept')
+export async function loadConceptDataFromDB<T>(tableName: string): Promise<T[]> {
+    const concept = await getConcept();
     if (!concept) return [];
-    return loadDataFromDB(concept, tableName);
+    return await loadDataFromDB<T>(concept, tableName);
 }
 
 // 生成客户端随机id

@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import {ref, nextTick} from 'vue';
-import {addConcept, conceptModalOpenEvent, emitter} from "../main.ts";
+import {addConcept, concept, conceptModalOpenEvent, emitter} from "../main.ts";
 import {Modal} from "bootstrap";
 
 const conceptInput = ref<HTMLInputElement | null>(null);
-const concept = ref('');
 
 emitter.on(conceptModalOpenEvent, () => {
   const modelElement = document.getElementById('staticBackdrop');

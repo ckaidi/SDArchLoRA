@@ -1,12 +1,12 @@
 <script setup lang="ts">
 
-import {ref} from "vue";
 import {
-  addOrUpdateSearchToDB,
-  continueSearchArchDaily, emitter,
+  keyword,
+  emitter,
+  searchArchDaily,
   getDataInDBByKey,
   loadSingleDataFromDB,
-  searchArchDaily
+  addOrUpdateSearchToDB,
 } from "../main.ts";
 import {SearchDB} from "../types/SearchDB.ts";
 import {ImageDetailJson} from "../types/ImageDetailJson.ts";
@@ -18,7 +18,6 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const keyword = ref("")
 
 emitter.on('keywordChangedEvent', (key: string): void => {
   keyword.value = key;
@@ -41,13 +40,6 @@ async function search() {
     await addOrUpdateSearchToDB(keyword.value);
     searchArchDaily(keyword.value, props.onReceiveImg);
   }
-}
-
-function showMore() {
-  if (keyword.value === '') {
-    keyword.value = sessionStorage.getItem('keyword') as string;
-  }
-  continueSearchArchDaily(keyword.value, props.onReceiveImg)
 }
 </script>
 

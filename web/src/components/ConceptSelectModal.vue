@@ -1,10 +1,9 @@
 <script setup lang="ts">
 
-import {addConcept, emitter, selectModalOpenEvent} from "../main.ts";
-import {onMounted, ref} from "vue";
+import {addConcept, concept, emitter, selectModalOpenEvent} from "../main.ts";
+import {onMounted} from "vue";
 import {Modal} from "bootstrap";
 
-const concept = ref("")
 onMounted(() => {
   emitter.on(selectModalOpenEvent, () => {
     const modalElement = document.getElementById('selectStaticBackdrop');

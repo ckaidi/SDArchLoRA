@@ -1,16 +1,5 @@
 <script setup lang="ts">
-
-import {saveDataToConceptToDB, searchArchDaily} from "../main.ts";
-import {ref} from "vue";
-
-const keyword = ref("");
-
-// // 定义一个接口用于 props
-// interface Props {
-//   onReceiveImg: (arg: object) => void;  // 假设参数类型是 any，根据实际情况修改
-// }
-
-// const props = defineProps<Props>();
+import {keyword, saveDataToConceptToDB, searchArchDaily, trainImages} from "../main.ts";
 
 function search() {
   sessionStorage.setItem('keyword', keyword.value)
@@ -20,7 +9,6 @@ function search() {
     project_count: 0,
     date: Date.now()
   })
-  // searchArchDaily(keyword.value, props.onReceiveImg)
   searchArchDaily(keyword.value, (arg: any) => {
     if (arg) {
       console.log(arg);
@@ -32,7 +20,8 @@ function search() {
 <template>
   <div class="container-fluid mt-2 mb-2 row p-0 m-0">
     <div class="p-0">
-      <button :disabled="true" type="button" class="btn btn-primary w-100" @click="search">搜索</button>
+      <button :disabled="true" type="button" class="btn btn-primary w-100" @click="search">训练图片</button>
+      <img v-for="item in trainImages" class="img-thumbnail mt-1 mb-1" :src="item.url" :alt="item.name"/>
     </div>
   </div>
 </template>

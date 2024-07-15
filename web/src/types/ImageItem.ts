@@ -2,22 +2,18 @@ export class ImageItem {
     public keyword: string[];
     public document_id: string;
     public name: string;
-    public src: Src;
+    public src: string;
     public show: boolean;
+    public isInTrain: boolean;
+    public index: number;
 
-    constructor(keyword: string[], name: string, document_id: string, url: string) {
+    constructor(keyword: string[], name: string, document_id: string, url: string, index: number) {
         this.keyword = keyword;
         this.name = name;
         this.document_id = document_id;
-        this.src = new Src(url);
+        this.src = url;
+        this.index = index;
         this.show = false;
-    }
-}
-
-export class Src {
-    public original: string
-
-    constructor(url: string) {
-        this.original = url;
+        this.isInTrain = false;
     }
 }

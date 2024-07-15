@@ -9,7 +9,7 @@ import {
   readSearchesDB,
   getDataInDBByKey,
   saveProjectInfoToDB,
-  loadFirstDataOrNullFromDB,
+  loadFirstDataOrNullFromDB, showSearchImages, keyword, trainImages, saveDataToConceptToDB, initFinish, trainHash,
 } from "../main.ts";
 import {onMounted, ref} from "vue";
 import {Waterfall} from "vue-waterfall-plugin-next";
@@ -20,10 +20,12 @@ import {PageImageDB} from "../types/PageImageDB.ts";
 import {PageDataDB} from "../types/PageDataDB.ts";
 import {SearchDB} from "../types/SearchDB.ts";
 import {useRoute} from "vue-router";
+import {TrainImage} from "../types/TrainImage.ts";
+import {sleep} from "../utils.ts";
 
 const searchComponent = ref<typeof SearchTextBoxComponent | null>(null);
+const waterfall = ref<typeof Waterfall | null>(null);
 const currentSelectUrl = ref("");
-const list = ref<ImageItem[]>([]);
 const options = ref<WaterOptions>(new WaterOptions());
 const currentPage = ref<number>(1);
 const pages = ref<number[]>([1, 2, 3]);
@@ -36,7 +38,24 @@ onMounted(async () => {
 });
 
 async function tagImg(item: ImageItem) {
-  window.location.href = "/#/cropper?" + "imgUrl=" + item.src.original + "&imgName=" + item.name + "&document_id=" + item.document_id
+  window.location.href = "/#/cropper?" + "imgUrl=" + item.src + "&imgName=" + item.name + "&document_id=" + item.document_id
+}
+
+// 放到左侧的训练栏里
+async function putInTrain(item: ImageItem) {
+  const temp = showSearchImages.value;
+  showSearchImages.value = [];
+  for (const v of temp) {
+    if (v.src != item.src) {
+      showSearchImages.value.push(v);
+    } else {
+      const trainImg = new TrainImage(item.name, item.src, currentPage.value, item.index, keyword.value, '');
+      trainImages.value.push(trainImg);
+      await saveDataToConceptToDB('train_images', trainImg);
+    }
+  }
+  if (waterfall.value)
+    waterfall.value.renderer()
 }
 
 // 接收到新图片到处理函数
@@ -50,19 +69,20 @@ async function addImages(imageText: string) {
   } else {
     // 保存图片信息
     await saveImageToDB(new ImageDB(jsonData.url, jsonData.name, jsonData.document_id));
-    list.value.push(
+    showSearchImages.value.push(
         new ImageItem(
             [sessionStorage.getItem('keyword') as string],
             jsonData.name,
             jsonData.document_id,
-            jsonData.url));
+            jsonData.url,
+            showSearchImages.value.length));
     if (jsonData['is_last']) {
-      const listLength = list.value.length;
+      const listLength = showSearchImages.value.length;
       const pageData: PageDataDB[] = [];
       const lastPageData = new PageDataDB(1);
       for (let j = 0; j < listLength; j++) {
-        const imageItem = list.value[j];
-        lastPageData.images.push(new PageImageDB(imageItem.src.original));
+        const imageItem = showSearchImages.value[j];
+        lastPageData.images.push(new PageImageDB(imageItem.src));
       }
       pageData.push(lastPageData);
       await saveNewPage(pageData, jsonData['page'], jsonData['project']);
@@ -71,7 +91,15 @@ async function addImages(imageText: string) {
 }
 
 async function readPage(pageNumber: number) {
-  list.value = [];
+  while (!initFinish.value) {
+    await sleep(100);
+  }
+  if (pageNumber != 1 && pages.value.length >= 3) {
+    if (pageNumber == pages.value[0] || pageNumber == pages.value[pages.value.length - 1]) {
+      pages.value = [pageNumber - 1, pageNumber, pageNumber + 1];
+    }
+  }
+  showSearchImages.value = [];
   const temp = sessionStorage.getItem("keyword");
   let data: PageImageDB[] = [];
   let keyword = '';
@@ -91,7 +119,8 @@ async function readPage(pageNumber: number) {
   for (const item of data) {
     const imageData = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', item.url_hash);
     if (imageData) {
-      list.value.push(new ImageItem([keyword], imageData.title, imageData.document_id, imageData.url));
+      if (!trainHash[imageData.url])
+        showSearchImages.value.push(new ImageItem([keyword], imageData.title, imageData.document_id, imageData.url, showSearchImages.value.length));
     } else {
       console.error(item + "图片不存在");
     }
@@ -101,17 +130,12 @@ async function readPage(pageNumber: number) {
 
 function seeBig(item: ImageItem, index: number) {
   sessionStorage.setItem('useless', index.toString());
-  return item.src.original.replace('medium_jpg', 'large_jpg');
-}
-
-function showMore() {
-  if (searchComponent.value)
-    searchComponent.value.showMore();
+  return item.src.replace('medium_jpg', 'large_jpg');
 }
 
 function mouseover(item: ImageItem) {
   item.show = true
-  currentSelectUrl.value = item.src.original
+  currentSelectUrl.value = item.src
 }
 
 function mouseleave(item: ImageItem) {
@@ -123,7 +147,8 @@ function mouseleave(item: ImageItem) {
   <SearchTextBoxComponent ref="searchComponent" :on-receive-img="addImages"/>
   <div style="min-height: 100%; width:100%">
     <Waterfall
-        :list="list"
+        ref="waterfall"
+        :list="showSearchImages"
         :row-key="options.rowKey"
         :gutter="options.gutter"
         :has-around-gutter="options.hasAroundGutter"
@@ -138,13 +163,16 @@ function mouseleave(item: ImageItem) {
         :align="options.align"
     >
       <template #item="{ item, url,index }">
-        <div @mouseover="mouseover(item)" @mouseleave="mouseleave(item)"
+        <div v-show="!item.isInTrain" @mouseover="mouseover(item)" @mouseleave="mouseleave(item)"
              class="bg-gray-900 rounded-lg shadow-md overflow-hidden transition-all
             duration-300 ease-linear hover:shadow-lg hover:shadow-gray-600 group">
           <div class="card">
             <div class="position-absolute top-0 left-0 d-flex justify-content-center align-items-center
                  w-100 h-100 text-white fs-5 bg-body-secondary opacity-75"
                  :class="{'cardButtonShow':item.show,'cardButtonHide':!item.show}">
+              <button type="button" class="btn btn-secondary" @click="putInTrain(item)">
+                放入训练
+              </button>
               <button type="button" class="btn btn-secondary" @click="tagImg(item)">
                 放入训练
               </button>
@@ -157,13 +185,17 @@ function mouseleave(item: ImageItem) {
         </div>
       </template>
     </Waterfall>
-    <nav v-show="list.length>0" aria-label="Page navigation example">
+    <nav v-show="showSearchImages.length>0" aria-label="Page navigation example">
       <ul class="pagination justify-content-center">
-        <li class="page-item"><a class="page-link" href="#">首页</a></li>
+        <li class="page-item">
+          <button class="page-link" @click="readPage(1)">首页</button>
+        </li>
         <li class="page-item" v-for="page in pages">
           <button class="page-link" :class="{active:currentPage==page}" @click="readPage(page)">{{ page }}</button>
         </li>
-        <li class="page-item"><a class="page-link" href="#" @click="showMore">下一页</a></li>
+        <li class="page-item">
+          <button class="page-link" @click="readPage(currentPage+1)">下一页</button>
+        </li>
       </ul>
     </nav>
   </div>

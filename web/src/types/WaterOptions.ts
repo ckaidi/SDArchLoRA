@@ -33,7 +33,7 @@ export class WaterOptions {
         this.animationEffect = 'animate__fadeInUp';
         this.animationDuration = 1000;
         this.animationDelay = 300;
-        this.imgSelector = 'src.original';
+        this.imgSelector = 'src';
         this.lazyload = true;
         this.align = 'center';
         this.crossOrigin = true;
