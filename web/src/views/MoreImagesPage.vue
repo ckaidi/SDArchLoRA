@@ -3,6 +3,7 @@
 import NavigationComponent from "../components/NavigationComponent.vue";
 import SearchComponent from "../components/SearchComponent.vue";
 import SelectedImgComponent from "../components/SelectedImgComponent.vue";
+import 'vue-waterfall-plugin-next/dist/style.css';
 import {ref} from "vue";
 import {getConcept} from "../main.ts";
 

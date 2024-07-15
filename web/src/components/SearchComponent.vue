@@ -17,13 +17,7 @@ import {PageDataDB} from "../types/PageDataDB.ts";
 
 const searchComponent = ref<typeof SearchTextBoxComponent | null>(null);
 const currentSelectUrl = ref("");
-const list = ref<ImageItem[]>([
-  new ImageItem(['建筑膜'], 'a', 'a', 'https://images.adsttc.com/media/images/6391/df4f/4a44/6025/7dc5/c033/large_jpg/the-best-architectural-models-of-2022_23.jpg?1670504278'),
-  new ImageItem(['建筑膜'], 'a', 'a', 'https://images.adsttc.com/media/images/6391/df4f/4a44/6025/7dc5/c033/large_jpg/the-best-architectural-models-of-2022_23.jpg?1670504278'),
-  new ImageItem(['建筑膜'], 'a', 'a', 'https://images.adsttc.com/media/images/6391/df4f/4a44/6025/7dc5/c033/large_jpg/the-best-architectural-models-of-2022_23.jpg?1670504278'),
-  new ImageItem(['建筑膜'], 'a', 'a', 'https://images.adsttc.com/media/images/6391/df4f/4a44/6025/7dc5/c033/large_jpg/the-best-architectural-models-of-2022_23.jpg?1670504278'),
-  new ImageItem(['建筑膜'], 'a', 'a', 'https://images.adsttc.com/media/images/6391/df4f/4a44/6025/7dc5/c033/large_jpg/the-best-architectural-models-of-2022_23.jpg?1670504278'),
-]);
+const list = ref<ImageItem[]>([]);
 const options = ref<WaterOptions>(new WaterOptions());
 
 async function tagImg(item: ImageItem) {
@@ -31,7 +25,6 @@ async function tagImg(item: ImageItem) {
 }
 
 function seeBig(item: ImageItem, index: number) {
-  console.log(index);
   return item.src.original.replace('medium_jpg', 'large_jpg');
 }
 
@@ -122,18 +115,18 @@ async function addImages(imageText: string) {
         </div>
       </template>
     </Waterfall>
-    <nav v-show="list.length>0" aria-label="Page navigation example">
-      <ul class="pagination">
-        <li class="page-item"><a class="page-link" href="#">Previous</a></li>
-        <li class="page-item"><a class="page-link" href="#">1</a></li>
-        <li class="page-item"><a class="page-link" href="#">2</a></li>
-        <li class="page-item"><a class="page-link" href="#">3</a></li>
-        <li class="page-item"><a class="page-link" href="#">Next</a></li>
-      </ul>
-    </nav>
-    <button v-show="list.length>0" class="btn btn-primary mb-4" @click="showMore">
-      加载更多
-    </button>
+    <!--    <nav v-show="list.length>0" aria-label="Page navigation example">-->
+    <!--      <ul class="pagination">-->
+    <!--        <li class="page-item"><a class="page-link" href="#">Previous</a></li>-->
+    <!--        <li class="page-item"><a class="page-link" href="#">1</a></li>-->
+    <!--        <li class="page-item"><a class="page-link" href="#">2</a></li>-->
+    <!--        <li class="page-item"><a class="page-link" href="#">3</a></li>-->
+    <!--        <li class="page-item"><a class="page-link" href="#">Next</a></li>-->
+    <!--      </ul>-->
+    <!--    </nav>-->
+    <!--    <button v-show="list.length>0" class="btn btn-primary mb-4" @click="showMore">-->
+    <!--      加载更多-->
+    <!--    </button>-->
   </div>
 </template>
 

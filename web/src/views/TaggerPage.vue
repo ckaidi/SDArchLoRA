@@ -277,5 +277,7 @@ function exportTrainData() {
 </template>
 
 <style scoped>
-
+.m-1:last-child {
+  margin-bottom: 20px;
+}
 </style>
