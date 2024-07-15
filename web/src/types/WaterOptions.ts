@@ -26,7 +26,7 @@ export class WaterOptions {
 
     constructor() {
         this.rowKey = "id";
-        this.gutter = 10;
+        this.gutter = 15;
         this.hasAroundGutter = false;
         this.width = 320;
         this.breakpoints = new WaterOptionsBreakpoints();

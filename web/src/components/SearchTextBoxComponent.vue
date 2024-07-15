@@ -1,7 +1,16 @@
 <script setup lang="ts">
 
 import {ref} from "vue";
-import {addOrUpdateSearchToDB, continueSearchArchDaily, searchArchDaily} from "../main.ts";
+import {
+  addOrUpdateSearchToDB,
+  continueSearchArchDaily, emitter,
+  getDataInDBByKey,
+  loadSingleDataFromDB,
+  searchArchDaily
+} from "../main.ts";
+import {SearchDB} from "../types/SearchDB.ts";
+import {ImageDetailJson} from "../types/ImageDetailJson.ts";
+import {ImageDB} from "../types/ImageDB.ts";
 
 // 定义一个接口用于 props
 interface Props {
@@ -11,10 +20,27 @@ interface Props {
 const props = defineProps<Props>();
 const keyword = ref("")
 
-function search() {
-  sessionStorage.setItem('keyword', keyword.value)
-  addOrUpdateSearchToDB(keyword.value);
-  searchArchDaily(keyword.value, props.onReceiveImg);
+emitter.on('keywordChangedEvent', (key: string): void => {
+  keyword.value = key;
+});
+
+async function search() {
+  sessionStorage.setItem('keyword', keyword.value);
+  const searchDB = await loadSingleDataFromDB<SearchDB>('spiders', 'searches', 'keyword', keyword.value);
+  if (searchDB) {
+    const imageData = searchDB.pages_data[0].images;
+    for (let i = 0; i < imageData.length; i++) {
+      const image = imageData[i];
+      const imageDB = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', image.url_hash);
+      if (imageDB) {
+        const imageJson = new ImageDetailJson(imageDB.title, imageDB.url, imageDB.document_id, searchDB.page_count, searchDB.project_count, i == imageData.length - 1);
+        props.onReceiveImg(JSON.stringify(imageJson));
+      }
+    }
+  } else {
+    await addOrUpdateSearchToDB(keyword.value);
+    searchArchDaily(keyword.value, props.onReceiveImg);
+  }
 }
 
 function showMore() {

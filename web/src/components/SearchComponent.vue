@@ -3,28 +3,104 @@
 import SearchTextBoxComponent from "./SearchTextBoxComponent.vue";
 import {ImageItem} from "../types/ImageItem.ts"
 import {
-  saveImageToDB,
+  emitter,
   saveNewPage,
-  saveProjectInfoToDB
+  saveImageToDB,
+  readSearchesDB,
+  getDataInDBByKey,
+  saveProjectInfoToDB,
+  loadFirstDataOrNullFromDB,
 } from "../main.ts";
-import {ref} from "vue";
+import {onMounted, ref} from "vue";
 import {Waterfall} from "vue-waterfall-plugin-next";
 import {WaterOptions} from "../types/WaterOptions.ts";
 import {ImageDB} from "../types/ImageDB.ts";
 import {ProjectDB} from "../types/ProjectDB.ts";
 import {PageImageDB} from "../types/PageImageDB.ts";
 import {PageDataDB} from "../types/PageDataDB.ts";
+import {SearchDB} from "../types/SearchDB.ts";
+import {useRoute} from "vue-router";
 
 const searchComponent = ref<typeof SearchTextBoxComponent | null>(null);
 const currentSelectUrl = ref("");
 const list = ref<ImageItem[]>([]);
 const options = ref<WaterOptions>(new WaterOptions());
+const currentPage = ref<number>(1);
+const pages = ref<number[]>([1, 2, 3]);
+const route = useRoute();
+
+onMounted(async () => {
+  const pageParam = route.query.page;
+  currentPage.value = pageParam ? parseInt(pageParam as string) : 1;
+  await readPage(currentPage.value);
+});
 
 async function tagImg(item: ImageItem) {
   window.location.href = "/#/cropper?" + "imgUrl=" + item.src.original + "&imgName=" + item.name + "&document_id=" + item.document_id
 }
 
+// 接收到新图片到处理函数
+async function addImages(imageText: string) {
+  const jsonData = JSON.parse(imageText);
+  if ("document_type" in jsonData) {
+    // 保存项目信息
+    await saveProjectInfoToDB(new ProjectDB(jsonData.url, jsonData.CreateAt, jsonData.UpdateAt, jsonData.author, jsonData.bim,
+        jsonData.categories, jsonData.document_type, jsonData.location, jsonData.meta_description, jsonData.offices,
+        jsonData.photographers, jsonData.tags, jsonData.title, jsonData.url, jsonData.year));
+  } else {
+    // 保存图片信息
+    await saveImageToDB(new ImageDB(jsonData.url, jsonData.name, jsonData.document_id));
+    list.value.push(
+        new ImageItem(
+            [sessionStorage.getItem('keyword') as string],
+            jsonData.name,
+            jsonData.document_id,
+            jsonData.url));
+    if (jsonData['is_last']) {
+      const listLength = list.value.length;
+      const pageData: PageDataDB[] = [];
+      const lastPageData = new PageDataDB(1);
+      for (let j = 0; j < listLength; j++) {
+        const imageItem = list.value[j];
+        lastPageData.images.push(new PageImageDB(imageItem.src.original));
+      }
+      pageData.push(lastPageData);
+      await saveNewPage(pageData, jsonData['page'], jsonData['project']);
+    }
+  }
+}
+
+async function readPage(pageNumber: number) {
+  list.value = [];
+  const temp = sessionStorage.getItem("keyword");
+  let data: PageImageDB[] = [];
+  let keyword = '';
+  currentPage.value = pageNumber;
+  if (temp) {
+    keyword = temp;
+    data = await readSearchesDB(temp, pageNumber, addImages);
+  } else {
+    const searchDB = await loadFirstDataOrNullFromDB<SearchDB>('spiders', 'searches');
+    if (searchDB) {
+      keyword = searchDB.keyword;
+      sessionStorage.setItem('keyword', keyword);
+      emitter.emit('keywordChangedEvent', keyword);
+      data = await readSearchesDB(keyword, pageNumber, addImages);
+    }
+  }
+  for (const item of data) {
+    const imageData = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', item.url_hash);
+    if (imageData) {
+      list.value.push(new ImageItem([keyword], imageData.title, imageData.document_id, imageData.url));
+    } else {
+      console.error(item + "图片不存在");
+    }
+  }
+  window.scrollTo(0, 0);
+}
+
 function seeBig(item: ImageItem, index: number) {
+  sessionStorage.setItem('useless', index.toString());
   return item.src.original.replace('medium_jpg', 'large_jpg');
 }
 
@@ -40,40 +116,6 @@ function mouseover(item: ImageItem) {
 
 function mouseleave(item: ImageItem) {
   item.show = false
-}
-
-// 接收到新图片到处理函数
-async function addImages(imageText: string) {
-  const jsonData = JSON.parse(imageText)
-  if ("document_type" in jsonData) {
-    // 保存项目信息
-    await saveProjectInfoToDB(new ProjectDB(jsonData.url, jsonData.CreateAt, jsonData.UpdateAt, jsonData.author, jsonData.bim,
-        jsonData.categories, jsonData.document_type, jsonData.location, jsonData.meta_description, jsonData.offices,
-        jsonData.photographers, jsonData.tags, jsonData.title, jsonData.url, jsonData.year));
-  } else {
-    // 保存图片信息
-    await saveImageToDB(new ImageDB(jsonData.url, jsonData.name, jsonData.document_id));
-    list.value.push(
-        new ImageItem(
-            [sessionStorage.getItem('keyword') as string],
-            jsonData.name,
-            jsonData.document_id,
-            jsonData.url))
-    if (jsonData['is_last']) {
-      const listLength = list.value.length;
-      const pageCount = Math.ceil(listLength / 50);
-      const pageData: PageDataDB[] = [];
-      for (let i = 0; i < pageCount; i++) {
-        const lastPageData = new PageDataDB(i + 1);
-        for (let j = i * 50; j < Math.min((i + 1) * 50, listLength); j++) {
-          const imageItem = list.value[j];
-          lastPageData.images.push(new PageImageDB(imageItem.src.original));
-        }
-        pageData.push(lastPageData);
-      }
-      await saveNewPage(pageData, jsonData['page'], jsonData['project']);
-    }
-  }
 }
 </script>
 
@@ -115,18 +157,15 @@ async function addImages(imageText: string) {
         </div>
       </template>
     </Waterfall>
-    <!--    <nav v-show="list.length>0" aria-label="Page navigation example">-->
-    <!--      <ul class="pagination">-->
-    <!--        <li class="page-item"><a class="page-link" href="#">Previous</a></li>-->
-    <!--        <li class="page-item"><a class="page-link" href="#">1</a></li>-->
-    <!--        <li class="page-item"><a class="page-link" href="#">2</a></li>-->
-    <!--        <li class="page-item"><a class="page-link" href="#">3</a></li>-->
-    <!--        <li class="page-item"><a class="page-link" href="#">Next</a></li>-->
-    <!--      </ul>-->
-    <!--    </nav>-->
-    <!--    <button v-show="list.length>0" class="btn btn-primary mb-4" @click="showMore">-->
-    <!--      加载更多-->
-    <!--    </button>-->
+    <nav v-show="list.length>0" aria-label="Page navigation example">
+      <ul class="pagination justify-content-center">
+        <li class="page-item"><a class="page-link" href="#">首页</a></li>
+        <li class="page-item" v-for="page in pages">
+          <button class="page-link" :class="{active:currentPage==page}" @click="readPage(page)">{{ page }}</button>
+        </li>
+        <li class="page-item"><a class="page-link" href="#" @click="showMore">下一页</a></li>
+      </ul>
+    </nav>
   </div>
 </template>
 
