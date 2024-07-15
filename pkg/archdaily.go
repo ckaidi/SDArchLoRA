@@ -136,7 +136,7 @@ func getImagesUrl(r *http.Request, conn *websocket.Conn, key string, page int) {
 		allCount := 0
 		// 将 HTTP 连接升级为 WebSocket 连接
 		for index, project := range searchResult.Results {
-			if index < startProjectCount {
+			if index <= startProjectCount {
 				continue
 			}
 			if allCount > 50 {
