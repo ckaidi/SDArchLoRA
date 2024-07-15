@@ -10,7 +10,7 @@ export class ImageItem {
         this.name = name;
         this.document_id = document_id;
         this.src = new Src(url);
-        this.show = true;
+        this.show = false;
     }
 }
 

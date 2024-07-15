@@ -5,8 +5,7 @@ import {ImageItem} from "../types/ImageItem.ts"
 import {
   saveImageToDB,
   saveNewPage,
-  saveProjectInfoToDB,
-  updateSearchPageCountAndProjectCount
+  saveProjectInfoToDB
 } from "../main.ts";
 import {ref} from "vue";
 import {Waterfall} from "vue-waterfall-plugin-next";
@@ -18,14 +17,21 @@ import {PageDataDB} from "../types/PageDataDB.ts";
 
 const searchComponent = ref<typeof SearchTextBoxComponent | null>(null);
 const currentSelectUrl = ref("");
-const list = ref<ImageItem[]>([]);
+const list = ref<ImageItem[]>([
+  new ImageItem(['建筑膜'], 'a', 'a', 'https://images.adsttc.com/media/images/6391/df4f/4a44/6025/7dc5/c033/large_jpg/the-best-architectural-models-of-2022_23.jpg?1670504278'),
+  new ImageItem(['建筑膜'], 'a', 'a', 'https://images.adsttc.com/media/images/6391/df4f/4a44/6025/7dc5/c033/large_jpg/the-best-architectural-models-of-2022_23.jpg?1670504278'),
+  new ImageItem(['建筑膜'], 'a', 'a', 'https://images.adsttc.com/media/images/6391/df4f/4a44/6025/7dc5/c033/large_jpg/the-best-architectural-models-of-2022_23.jpg?1670504278'),
+  new ImageItem(['建筑膜'], 'a', 'a', 'https://images.adsttc.com/media/images/6391/df4f/4a44/6025/7dc5/c033/large_jpg/the-best-architectural-models-of-2022_23.jpg?1670504278'),
+  new ImageItem(['建筑膜'], 'a', 'a', 'https://images.adsttc.com/media/images/6391/df4f/4a44/6025/7dc5/c033/large_jpg/the-best-architectural-models-of-2022_23.jpg?1670504278'),
+]);
 const options = ref<WaterOptions>(new WaterOptions());
 
 async function tagImg(item: ImageItem) {
   window.location.href = "/#/cropper?" + "imgUrl=" + item.src.original + "&imgName=" + item.name + "&document_id=" + item.document_id
 }
 
-function seeBig(item: ImageItem) {
+function seeBig(item: ImageItem, index: number) {
+  console.log(index);
   return item.src.original.replace('medium_jpg', 'large_jpg');
 }
 
@@ -96,7 +102,7 @@ async function addImages(imageText: string) {
         :cross-origin=true
         :align="options.align"
     >
-      <template #item="{ item, url }">
+      <template #item="{ item, url,index }">
         <div @mouseover="mouseover(item)" @mouseleave="mouseleave(item)"
              class="bg-gray-900 rounded-lg shadow-md overflow-hidden transition-all
             duration-300 ease-linear hover:shadow-lg hover:shadow-gray-600 group">
@@ -107,7 +113,7 @@ async function addImages(imageText: string) {
               <button type="button" class="btn btn-secondary" @click="tagImg(item)">
                 放入训练
               </button>
-              <a type="button" class="btn btn-secondary" :href="seeBig(item)" target="_blank">
+              <a type="button" class="btn btn-secondary" :href="seeBig(item,index)" target="_blank">
                 查看大图
               </a>
             </div>
@@ -132,5 +138,16 @@ async function addImages(imageText: string) {
 </template>
 
 <style scoped>
+.cardButtonShow {
+  visibility: visible;
+}
 
+.cardButtonHide {
+  visibility: hidden;
+}
+
+.item img {
+  width: 100%;
+  height: 100%;
+}
 </style>
