@@ -3,13 +3,13 @@
 import NavigationComponent from "../components/NavigationComponent.vue";
 import {ref} from "vue";
 import {
-  appendAlert, 
+  appendAlert,
   createClientId,
   updateConceptItem,
   deleteConceptItem,
   loadConceptDataFromDB,
   saveDataToConceptToDB,
-  downloadMultipleFilesAsZip, 
+  downloadMultipleFilesAsZip,
 } from "../main.ts";
 import {Tag} from "../types/Tag.ts";
 import {Image} from "../types/Image.ts";
