@@ -5,7 +5,7 @@ import {conceptModalOpenEvent, emitter} from "./main.ts";
 import TipsModal from "./components/TipsModal.vue";
 
 function addConcept() {
-  emitter.emit(conceptModalOpenEvent, 'progress');
+  emitter.emit(conceptModalOpenEvent);
 }
 </script>
 

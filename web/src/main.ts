@@ -1,10 +1,6 @@
-import './style.css'
 import 'jquery'
 import 'popper.js'
 import mitt from 'mitt'
-import './assets/main.css'
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap/dist/css/bootstrap.css'
 import {v4} from 'uuid'
 import App from './App.vue'
 import {createApp, reactive, ref} from 'vue'
@@ -17,10 +13,15 @@ import {ProjectDB} from "./types/ProjectDB.ts";
 import {ConceptDB} from "./types/ConceptDB.ts";
 import {SearchDB} from "./types/SearchDB.ts";
 import {PageDataDB} from "./types/PageDataDB.ts";
-import {getRandomString} from "./utils.ts";
+import {getRandomString, sleep} from "./utils.ts";
 import {PageImageDB} from "./types/PageImageDB.ts";
 import {ImageItem} from "./types/ImageItem.ts";
 import {TrainImage} from "./types/TrainImage.ts";
+import './style.css'
+import './assets/main.css'
+import 'vue-cropper/dist/index.css'
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 type Events = {
     selectModalOpenEvent: void;
@@ -29,6 +30,7 @@ type Events = {
     conceptModalCloseEvent: string;
     keywordChangedEvent: string;
     addTrainImg: ImageItem;
+    selectTrainImgChange: TrainImage;
 };
 
 export let searchImageCount = 0;
@@ -38,24 +40,25 @@ export const selectModalOpenEvent = 'selectModalOpenEvent'
 export const conceptModalOpenEvent = 'conceptModalOpenEvent'
 export const conceptModalCloseEvent = 'conceptModalCloseEvent'
 
-export const initFinish = ref(false);
 export const concept = ref('');
 export const keyword = ref("");
-export const showSearchImages = ref<ImageItem[]>([]);
-export const trainImages = ref<TrainImage[]>([]);
-export const trainHash = reactive<{ [key: string]: any }>({});
+export const initFinish = ref(false);
+export let selectTrainImg = ref<TrainImage | null>(null);
+export const trainHash = reactive<{ [key: string]: TrainImage }>({});
+export const showSearchImages = ref(reactive<{ [key: string]: ImageItem }>({}));
 
-const instance = createApp(App)
+const initDateBaseFinish = ref(false);
+
+const instance = createApp(App);
+instance.component('vue-cropper', VueCropper);
 instance.use(router)
 instance.use(VueCookies)
-instance.use(VueCropper)
 instance.mount('#app')// 实现一个 once 功能
 const alertPlaceholder = document.getElementById('liveAlertPlaceholder') as HTMLElement
 initDataBase().then(async () => {
+    initDateBaseFinish.value = true;
     const images = await loadConceptDataFromDB<TrainImage>('train_images');
-    trainImages.value = [];
     for (const trainImage of images) {
-        trainImages.value.push(trainImage);
         trainHash[trainImage.url] = trainImage;
     }
     initFinish.value = true;
@@ -89,6 +92,7 @@ async function initDataBase() {
             searchesTable.createIndex("nameIndex", 'name', {unique: true});
         }
     });
+    await addConcept('default', false);
 }
 
 // 所有方法都从这打开数据库
@@ -122,7 +126,13 @@ export async function checkDataInDB(dbName: string, storeName: string, keyPath: 
     return obj != null;
 }
 
-// 获取指定key的数据
+/**
+ * 获取指定key的数据
+ * @param dbName 数据库名称
+ * @param tableName 数据表名称
+ * @param keyPath 键路径（包含Index）
+ * @param key 键值
+ */
 export async function getDataInDBByKey<T>(dbName: string, tableName: string, keyPath: string, key: any): Promise<T | null> {
     return new Promise(async (resolve, reject) => {
         const db = await openDataBase(dbName, (db_temp) => {
@@ -194,10 +204,11 @@ export async function saveConceptToDB(key: string) {
 }
 
 // 添加训练概念
-export async function addConcept(concept: string) {
+export async function addConcept(concept: string, isModelOpen: boolean = true) {
     const isExist = await checkDataInDB("spiders", "concepts", "nameIndex", concept);
     if (isExist || concept === '') {
-        emitter.emit(conceptModalOpenEvent);
+        if (isModelOpen)
+            emitter.emit(conceptModalOpenEvent);
     } else {
         sessionStorage.setItem('concept', concept)
         await saveConceptToDB(concept)
@@ -286,7 +297,7 @@ function searchCore(ws: WebSocket, onReceiveImg: (arg: string) => void) {
 export function searchArchDaily(keyword: string, onReceiveImg: (arg: string) => void) {
     // 创建一个 WebSocket 对象，连接到本地的 8080 端口
     if (keyword !== "") {
-        const ws = new WebSocket("ws://" + spiderServer + "/archdaily?keyword=" + keyword + "&page=1&projectCount=0");
+        const ws = new WebSocket("ws://" + spiderServer + "/archdaily?keyword=" + keyword + "&page=1&projectCount=-1");
         searchCore(ws, onReceiveImg);
     }
 }
@@ -547,6 +558,9 @@ function once(event: any, handler: (arg: any) => void) {
 // 获取训练概念
 export function getConcept(): Promise<string> {
     return new Promise(async (resolve, _) => {
+        while (!initDateBaseFinish.value) {
+            await sleep(100);
+        }
         const concept = sessionStorage.getItem('concept');
         if (concept === null || concept == undefined) {
             const concepts = await loadDataFromDB<ConceptDB>('spiders', 'concepts')
@@ -665,8 +679,12 @@ export async function saveImageToDB(image: ImageDB) {
     await saveDataToGlobalDB("images", image);
 }
 
-// 更新搜索的archidaily页面数和项目
-// 显示更多图片
+/**
+ * 更新搜索的archidaily页面数和项目
+ * 显示更多图片
+ * @param keyword 搜索关键字
+ * @param onReceiveImg 接受图片的委托
+ */
 export async function continueSearchArchDaily(keyword: string, onReceiveImg: (arg: string) => void) {
     // 创建一个 WebSocket 对象，连接到本地的 8080 端口
     if (keyword !== "") {
@@ -681,7 +699,12 @@ export async function continueSearchArchDaily(keyword: string, onReceiveImg: (ar
     }
 }
 
-// 读取搜索结果
+/**
+ * 读取搜索结果
+ * @param keyword 搜索关键字
+ * @param page 页面
+ * @param addImages 添加图片委托
+ */
 export async function readSearchesDB(keyword: string, page: number, addImages: (arg: string) => void): Promise<PageImageDB[]> {
     const searchDB = await loadSingleDataFromDB<SearchDB>('spiders', 'searches', 'keyword', keyword);
     if (!searchDB) return [];
@@ -690,4 +713,26 @@ export async function readSearchesDB(keyword: string, page: number, addImages: (
     }
     await continueSearchArchDaily(keyword, addImages);
     return [];
+}
+
+/**
+ * 删除数据库中指定项
+ * @param dbname 数据库名称
+ * @param tableName 页面
+ * @param key 数据键
+ */
+export async function deleteDBItemByKey(dbname: string, tableName: string, key: any) {
+    const db = await openDataBase(dbname, (db_temp) => {
+        // 关闭新创建的数据库
+        db_temp.close();
+        // 删除新创建的数据库
+        indexedDB.deleteDatabase(dbname);
+    });
+    if (!db) {
+        return;
+    }
+
+    const transaction = db.transaction([tableName], 'readwrite'); // 创建读写事务
+    const store = transaction.objectStore(tableName);
+    store.delete(key);
 }

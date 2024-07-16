@@ -3,14 +3,17 @@
 import NavigationComponent from "../components/NavigationComponent.vue";
 import {ref} from "vue";
 import {
-  appendAlert, createClientId,
+  appendAlert, 
+  createClientId,
+  updateConceptItem,
   deleteConceptItem,
-  downloadMultipleFilesAsZip, loadConceptDataFromDB,
+  loadConceptDataFromDB,
   saveDataToConceptToDB,
-  updateConceptItem
+  downloadMultipleFilesAsZip, 
 } from "../main.ts";
 import {Tag} from "../types/Tag.ts";
 import {Image} from "../types/Image.ts";
+import {TrainImage} from "../types/TrainImage.ts";
 
 const userInput = ref<string>('');
 const selectImg = ref<Image>(new Image());
@@ -25,12 +28,12 @@ function beforeCreate(): Promise<boolean> {
   return new Promise<boolean>(async (resolve) => {
     allTaggers.value = await loadConceptDataFromDB('user_tags');
     createClientId();
-    const arrays = await loadConceptDataFromDB('train_images');
+    const arrays = await loadConceptDataFromDB<TrainImage>('train_images');
     let index = 0;
     for (const image of arrays) {
       // TODO 推测tags类型
-      const tags = JSON.parse(image.tags)
-      allImages.value.push(new Image(image.name, index, image.base64, tags, createTags([image.keyword]), createTags(image.projecttags)));
+      const tags = image.tags;
+      allImages.value.push(new Image(image.name, index, image.large_base64, tags, createTags([image.keyword]), createTags([image.keyword])));
       index++;
     }
     if (allImages.value.length > 0) {
@@ -130,8 +133,8 @@ async function deleteTag(tag: any) {
   }
 }
 
-function createTags(strArray: Tag[]) {
-  let result = [];
+function createTags(strArray: string[]): Tag[] {
+  let result: Tag[] = [];
   for (const strArrayElement of strArray) {
     // TODO 推测strArrayElement类型
     result.push(new Tag("archdaily", strArrayElement, 'text-bg-secondary', "archdaily"))

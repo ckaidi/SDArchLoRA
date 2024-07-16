@@ -1,11 +1,11 @@
 ﻿// TODO 推测tag类型
 export class Tag {
     public key: string;
-    public tag: any;
+    public tag: string;
     public color: string;
     public tagType: string;
 
-    constructor(key: string, tag: any, color: string, tagType: string) {
+    constructor(key: string, tag: string, color: string, tagType: string) {
         this.key = key;
         this.tag = tag;
         this.color = color;

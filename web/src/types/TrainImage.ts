@@ -5,17 +5,19 @@ export class TrainImage {
     public indexInSearch: number;
     public keyword: string;
     public tags: string[];
-    public base64: string;
+    public large_base64: string = '';
     public show: boolean;
+    public isSelected: boolean = false;
+    public large_width: number = -1;
+    public large_height: number = -1;
 
-    constructor(name: string, url: string, page: number, indexInSearch: number, keyword: string, base64: string) {
+    constructor(name: string, url: string, page: number, indexInSearch: number, keyword: string) {
         this.name = name;
         this.url = url;
         this.page = page;
         this.indexInSearch = indexInSearch;
         this.keyword = keyword;
         this.tags = [];
-        this.base64 = base64;
         this.show = false;
     }
 }

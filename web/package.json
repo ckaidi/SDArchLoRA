@@ -12,6 +12,7 @@
     "@rollup/rollup-win32-x64-msvc": "^4.18.1",
     "@types/jquery": "^3.5.30",
     "@types/jszip": "^3.4.1",
+    "@vue/compat": "^3.4.31",
     "bootstrap": "^5.3.3",
     "jquery": "^3.7.1",
     "jszip": "^3.10.1",
@@ -19,7 +20,7 @@
     "uuid": "^10.0.0",
     "vue": "^3.4.29",
     "vue-cookies": "^1.8.4",
-    "vue-cropper": "^0.6.5",
+    "vue-cropper": "^1.1.4",
     "vue-router": "^4.4.0",
     "vue-waterfall-plugin-next": "^2.4.3"
   },
