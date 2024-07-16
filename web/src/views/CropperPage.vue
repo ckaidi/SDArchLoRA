@@ -70,7 +70,7 @@ function resizeCropperSpace() {
     const navigation = document.getElementById('navigationComponent');
     if (navigation) {
       const nh = navigation.offsetHeight;
-      cutElement.style.height = (window.innerHeight - nh - 20) + 'px';
+      cutElement.style.height = (window.innerHeight - nh - 140) + 'px';
     }
   }
 }
@@ -224,37 +224,33 @@ async function skip() {
     <div class="col-1 p-1 m-0">
       <SelectedImgComponent :delete-able="false"/>
     </div>
-    <div class="col-10 m-0 d-flex" id="cropper-space" ref="cropperSpace" v-show="selectTrainImg!=null">
+    <div class="row col-11 m-0 d-flex" id="cropper-space" ref="cropperSpace" v-show="selectTrainImg!=null">
       <div class="cut w-100" id="cut" style="margin: 10px">
         <VueCropper ref="cropper" v-bind="option"></VueCropper>
       </div>
-      <div class="col-1">
-        <div class="test-button">
-          <div style="display:block; width: 100%;">
-            <label class="c-item">
-              <span>固定长宽比</span>
-              <input type="checkbox" v-model="option.fixed">
-            </label>
-            <div class="container input-group mb-1">
-              <span class="input-group-text" id="basic-addon1">w:</span>
-              <input type="number" class="form-control" placeholder="宽带" aria-label="Username"
-                     aria-describedby="basic-addon1" v-model="option.fixedNumber[0]">
-            </div>
-            <div class="container input-group mb-3">
-              <span class="input-group-text" id="basic-addon1">h:</span>
-              <input type="number" class="form-control" placeholder="高度" aria-label="Username"
-                     aria-describedby="basic-addon1" v-model="option.fixedNumber[1]">
-            </div>
-            <div class="py-3">
-              <label class="align-content-start fw-bolder row m-1 justify-content-start">高宽比：</label>
-              <select class="form-select" aria-label="Default select example">
-                <option v-for="tag in rationHistory" :value="tag">{{ tag.h }}:{{ tag.w }}</option>
-              </select>
-            </div>
-            <button @click="nextStep" class="btn btn-primary m-2">下一步</button>
-            <button v-show="false" @click="skip" class="btn btn-primary m-2">稍后自行裁剪</button>
-          </div>
+      <div class="col-12  row-12">
+        <label class="c-item col-1">
+          <span>固定长宽比</span>
+          <input type="checkbox" v-model="option.fixed">
+        </label>
+        <div class="col-2 mb-1">
+          <span class="input-group-text" id="basic-addon1">w:</span>
+          <input type="number" class="form-control" placeholder="宽带" aria-label="Username"
+                 aria-describedby="basic-addon1" v-model="option.fixedNumber[0]">
         </div>
+        <div class="col-1 mb-3">
+          <span class="input-group-text" id="basic-addon1">h:</span>
+          <input type="number" class="form-control" placeholder="高度" aria-label="Username"
+                 aria-describedby="basic-addon1" v-model="option.fixedNumber[1]">
+        </div>
+        <div class="col-1 py-3">
+          <label class="align-content-start fw-bolder row m-1 justify-content-start">高宽比：</label>
+          <select class="form-select" aria-label="Default select example">
+            <option v-for="tag in rationHistory" :value="tag">{{ tag.h }}:{{ tag.w }}</option>
+          </select>
+        </div>
+        <button @click="nextStep" class="col-1 btn btn-primary m-2">下一步</button>
+        <button v-show="false" @click="skip" class="col-1 btn btn-primary m-2">稍后自行裁剪</button>
       </div>
     </div>
   </div>
