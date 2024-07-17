@@ -4,6 +4,8 @@ import (
 	"SpiderGo/pkg"
 	"embed"
 	"fmt"
+	"github.com/inconshreveable/go-update"
+	"io"
 	"io/fs"
 	"net/http"
 	"os/exec"
@@ -32,6 +34,24 @@ func openURL(url string) error {
 	}
 
 	return exec.Command(cmd, args...).Start()
+}
+
+func doUpdate(url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
+	err = update.Apply(resp.Body, update.Options{})
+	if err != nil {
+		// error handling
+	}
+	return err
 }
 
 func main() {
