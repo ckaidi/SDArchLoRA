@@ -22,6 +22,7 @@ import 'vue-cropper/dist/index.css'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {Tag} from "./types/Tag.ts";
+import {CropperOptions} from "./types/CropperOptions.ts";
 
 type Events = {
     selectModalOpenEvent: void;
@@ -45,6 +46,7 @@ export const initFinish = ref(false);
 export const concept = ref<string>('default');
 export const userTags = ref<Tag[]>([]);
 export const allConcepts = ref<ConceptDB[]>([]);
+export const cropperOption = ref<CropperOptions>(new CropperOptions());
 export const selectTrainImg = ref<TrainImage | null>(null);
 export const trainHash = ref(reactive<{ [key: string]: TrainImage }>({}));
 export const showSearchImages = ref(reactive<{ [key: string]: ImageItem }>({}));
@@ -438,15 +440,20 @@ export const appendAlert = (message: string, type: string) => {
 }
 
 function base64ToBlob(base64: string, mimeType: string) {
-    // Base64字符串解码
-    let bytes = atob(base64.split(',')[1]);
-    // 处理异常,将ascii码小于0的转换为大于0
-    let ab = new ArrayBuffer(bytes.length);
-    let ia = new Uint8Array(ab);
-    for (let i = 0; i < bytes.length; i++) {
-        ia[i] = bytes.charCodeAt(i);
+    try {
+        // Base64字符串解码
+        let bytes = atob(base64.split(',')[1]);
+        // 处理异常,将ascii码小于0的转换为大于0
+        let ab = new ArrayBuffer(bytes.length);
+        let ia = new Uint8Array(ab);
+        for (let i = 0; i < bytes.length; i++) {
+            ia[i] = bytes.charCodeAt(i);
+        }
+        return new Blob([ab], {type: mimeType});
+    } catch (e) {
+        console.error(e);
+        throw e;
     }
-    return new Blob([ab], {type: mimeType});
 }
 
 function loadDataFromDB<T>(dbname: string, tableName: string): Promise<T[]> {
@@ -553,13 +560,18 @@ export function loadFirstDataOrNullFromDB<T>(dbname: string, tableName: string):
 export async function downloadMultipleFilesAsZip() {
     const zip = new JSZip();
     let index = 0;
-    for (const image of Object.values(trainHash)) {
+    for (const image of Object.values(trainHash.value)) {
         let tagText = "";
-        for (const tag of image.tags) {
-            tagText += tag + ','
+        if (image.tags) {
+            for (const tag of image.tags) {
+                tagText += tag + ','
+            }
         }
         // 添加文件到ZIP
         zip.file(index + '.txt', tagText);
+        if (!image.large_base64 || image.large_base64 == '') {
+            await setCropperImg(image);
+        }
         zip.file(index + '.jpg', base64ToBlob(image.large_base64, 'jpeg'), {base64: true});
         index++;
     }
@@ -725,4 +737,37 @@ export async function changeWorkSpaceConcept(conceptTo: ConceptDB) {
     const copy = new ConceptDB(conceptTo.name);
     copy.date = conceptTo.date;
     await saveDataToGlobalDB('concepts', copy);
+}
+
+/**
+ * 获取训练图片base64
+ * @param imgUrl 训练图片
+ */
+export async function setCropperImg(imgUrl: TrainImage): Promise<boolean> {
+    return new Promise((resolve) => {
+        const temp = imgUrl.url.replace('medium_jpg', 'large_jpg');
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'http://' + spiderServer + '/img2base64', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = async function () {
+            if (xhr.status === 200) {
+                const result = JSON.parse(xhr.responseText);
+                cropperOption.value.img = result['Base64'];
+                if (imgUrl) {
+                    imgUrl.large_base64 = result['Base64'];
+                    await saveSelectTrainImgToDB();
+                    const imgDB = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', imgUrl.url);
+                    if (imgDB) {
+                        imgDB.large_base64 = imgUrl.large_base64;
+                        await saveDataToGlobalDB('images', imgDB);
+                        resolve(true);
+                    }
+                }
+            } else {
+                alert('网络错误，请重试');
+                resolve(false);
+            }
+        };
+        xhr.send(temp);
+    })
 }

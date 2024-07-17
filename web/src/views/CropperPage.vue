@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import {CropperOptions} from "../types/CropperOptions.ts";
 import {onMounted, ref} from "vue";
 import {
+  cropperOption,
   emitter,
   getDataInDBByKey,
   resizeCutterSpace,
-  saveDataToGlobalDB,
   saveSelectTrainImgToDB,
-  selectTrainImg,
-  spiderServer, trainHash
+  selectTrainImg, setCropperImg,
+  trainHash
 } from "../main.ts";
 import NavigationComponent from "../components/NavigationComponent.vue";
 import SelectedImgComponent from "../components/SelectedImgComponent.vue";
@@ -25,7 +24,6 @@ interface IRatio {
 const currentTab = ref("裁剪");
 const cropper = ref<typeof VueCropper>(VueCropper);
 const cropperSpace = ref<HTMLElement | null>(null);
-const option = ref<CropperOptions>(new CropperOptions());
 const rationHistory: IRatio[] = [
   {w: 1, h: 1},
   {w: 3, h: 2},
@@ -44,43 +42,17 @@ onMounted(() => {
     if (trainImg.large_base64 != '') {
       const imgDB = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', trainImg.url);
       if (imgDB) {
-        option.value.img = imgDB.large_base64;
+        cropperOption.value.img = imgDB.large_base64;
         return
       }
     }
-    // 要阻塞
     setCropperImg(trainImg);
   });
   resizeCutterSpace();
   if (selectTrainImg.value) {
-    option.value.img = selectTrainImg.value.large_base64;
+    cropperOption.value.img = selectTrainImg.value.large_base64;
   }
 });
-
-function setCropperImg(imgUrl: TrainImage) {
-  const temp = imgUrl.url.replace('medium_jpg', 'large_jpg');
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', 'http://' + spiderServer + '/img2base64', true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.onload = async function () {
-    if (xhr.status === 200) {
-      const result = JSON.parse(xhr.responseText);
-      option.value.img = result['Base64'];
-      if (imgUrl) {
-        imgUrl.large_base64 = result['Base64'];
-        await saveSelectTrainImgToDB();
-        const imgDB = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', imgUrl.url);
-        if (imgDB) {
-          imgDB.large_base64 = imgUrl.large_base64;
-          await saveDataToGlobalDB('images', imgDB);
-        }
-      }
-    } else {
-      alert('网络错误，请重试')
-    }
-  };
-  xhr.send(temp);
-}
 
 function saveCropperResult() {
   document.createElement('a');
@@ -96,8 +68,8 @@ function saveCropperResult() {
 
 function rationSelectChange(e: Event) {
   if (e.type == 'change' && selectRatio.value) {
-    option.value.fixedNumber[1] = selectRatio.value.h;
-    option.value.fixedNumber[0] = selectRatio.value.w;
+    cropperOption.value.fixedNumber[1] = selectRatio.value.h;
+    cropperOption.value.fixedNumber[0] = selectRatio.value.w;
   }
 }
 </script>
@@ -110,12 +82,12 @@ function rationSelectChange(e: Event) {
     </div>
     <div class="row col-11 m-0 d-flex" id="cropper-space" ref="cropperSpace" v-show="selectTrainImg!=null">
       <div class="cut w-100" id="cut" style="margin: 10px">
-        <VueCropper ref="cropper" v-bind="option"></VueCropper>
+        <VueCropper ref="cropper" v-bind="cropperOption"></VueCropper>
       </div>
       <div class="col-12">
         <div class="row">
           <div class="col-2 form-check align-middle " style="margin-left: 20px;margin-top: 5px">
-            <input class="form-check-input" type="checkbox" v-model="option.fixed" id="flexCheckDefault">
+            <input class="form-check-input" type="checkbox" v-model="cropperOption.fixed" id="flexCheckDefault">
             <label class="form-check-label align-middle" for="flexCheckDefault">
               固定长宽比
             </label>
@@ -124,14 +96,14 @@ function rationSelectChange(e: Event) {
             <div class="input-group mb-3">
               <span class="input-group-text" id="basic-addon1">w:</span>
               <input type="text" class="form-control" placeholder="Username" aria-label="Username"
-                     aria-describedby="basic-addon1" v-model="option.fixedNumber[0]">
+                     aria-describedby="basic-addon1" v-model="cropperOption.fixedNumber[0]">
             </div>
           </div>
           <div class="col-2">
             <div class="input-group mb-3">
               <span class="input-group-text" id="basic-addon1">h:</span>
               <input type="text" class="form-control" placeholder="Username" aria-label="Username"
-                     aria-describedby="basic-addon1" v-model="option.fixedNumber[1]">
+                     aria-describedby="basic-addon1" v-model="cropperOption.fixedNumber[1]">
             </div>
           </div>
           <div class="col-2">
