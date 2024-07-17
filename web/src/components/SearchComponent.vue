@@ -57,31 +57,35 @@ async function putInTrain(item: ImageItem) {
 
 // 接收到新图片到处理函数
 async function addImages(imageText: string) {
-  const jsonData = JSON.parse(imageText);
-  if ("document_type" in jsonData) {
-    // 保存项目信息
-    await saveProjectInfoToDB(new ProjectDB(jsonData.document_id, jsonData.CreateAt, jsonData.UpdateAt, jsonData.author, jsonData.bim,
-        jsonData.categories, jsonData.document_type, jsonData.location, jsonData.meta_description, jsonData.offices,
-        jsonData.photographers, jsonData.tags, jsonData.title, jsonData.url, jsonData.year));
-  } else {
-    // 保存图片信息
-    await saveImageToDB(new ImageDB(jsonData.url, jsonData.name, jsonData.document_id));
-    showSearchImages.value[jsonData.url] = new ImageItem(
-        [sessionStorage.getItem('keyword') as string],
-        jsonData.name,
-        jsonData.document_id,
-        jsonData.url,
-        Object.keys(showSearchImages.value).length);
-    if (jsonData['is_last']) {
-      const pageData: PageDataDB[] = [];
-      const lastPageData = new PageDataDB(1);
-      for (const key in showSearchImages.value) {
-        const imageItem = showSearchImages.value[key];
-        lastPageData.images.push(new PageImageDB(imageItem.src));
+  try {
+    const jsonData = JSON.parse(imageText);
+    if ("document_type" in jsonData) {
+      // 保存项目信息
+      await saveProjectInfoToDB(new ProjectDB(jsonData.document_id, jsonData.CreateAt, jsonData.UpdateAt, jsonData.author, jsonData.bim,
+          jsonData.categories, jsonData.document_type, jsonData.location, jsonData.meta_description, jsonData.offices,
+          jsonData.photographers, jsonData.tags, jsonData.title, jsonData.url, jsonData.year));
+    } else {
+      // 保存图片信息
+      await saveImageToDB(new ImageDB(jsonData.url, jsonData.name, jsonData.document_id));
+      showSearchImages.value[jsonData.url] = new ImageItem(
+          [sessionStorage.getItem('keyword') as string],
+          jsonData.name,
+          jsonData.document_id,
+          jsonData.url,
+          Object.keys(showSearchImages.value).length);
+      if (jsonData['is_last']) {
+        const pageData: PageDataDB[] = [];
+        const lastPageData = new PageDataDB(1);
+        for (const key in showSearchImages.value) {
+          const imageItem = showSearchImages.value[key];
+          lastPageData.images.push(new PageImageDB(imageItem.src));
+        }
+        pageData.push(lastPageData);
+        await saveNewPage(pageData, jsonData['page'], jsonData['project']);
       }
-      pageData.push(lastPageData);
-      await saveNewPage(pageData, jsonData['page'], jsonData['project']);
     }
+  } catch (e) {
+    console.error(e);
   }
 }
 
@@ -97,25 +101,24 @@ async function readPage(pageNumber: number) {
   showSearchImages.value = reactive({});
   const temp = sessionStorage.getItem("keyword");
   let data: PageImageDB[] = [];
-  let keyword = '';
   currentPage.value = pageNumber;
   if (temp) {
-    keyword = temp;
+    keyword.value = temp;
     data = await readSearchesDB(temp, pageNumber, addImages);
   } else {
     const searchDB = await loadFirstDataOrNullFromDB<SearchDB>('spiders', 'searches');
     if (searchDB) {
-      keyword = searchDB.keyword;
-      sessionStorage.setItem('keyword', keyword);
-      emitter.emit('keywordChangedEvent', keyword);
-      data = await readSearchesDB(keyword, pageNumber, addImages);
+      keyword.value = searchDB.keyword;
+      sessionStorage.setItem('keyword', keyword.value);
+      emitter.emit('keywordChangedEvent', keyword.value);
+      data = await readSearchesDB(keyword.value, pageNumber, addImages);
     }
   }
   for (const item of data) {
     const imageData = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', item.url_hash);
     if (imageData) {
       if (!trainHash.value[imageData.url])
-        showSearchImages.value[imageData.url] = new ImageItem([keyword], imageData.title,
+        showSearchImages.value[imageData.url] = new ImageItem([keyword.value], imageData.title,
             imageData.document_id, imageData.url, Object.keys(showSearchImages.value).length);
     } else {
       console.error(item + "图片不存在");

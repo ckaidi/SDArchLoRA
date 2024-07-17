@@ -6,11 +6,13 @@ import {
   searchArchDaily,
   getDataInDBByKey,
   loadSingleDataFromDB,
-  addOrUpdateSearchToDB,
+  addOrUpdateSearchToDB, showSearchImages,
 } from "../main.ts";
 import {SearchDB} from "../types/SearchDB.ts";
 import {ImageDetailJson} from "../types/ImageDetailJson.ts";
 import {ImageDB} from "../types/ImageDB.ts";
+import {reactive} from "vue";
+import {ImageItem} from "../types/ImageItem.ts";
 
 // 定义一个接口用于 props
 interface Props {
@@ -37,6 +39,7 @@ async function search() {
       }
     }
   } else {
+    showSearchImages.value = reactive<{ [key: string]: ImageItem }>({});
     await addOrUpdateSearchToDB(keyword.value);
     searchArchDaily(keyword.value, props.onReceiveImg);
   }
