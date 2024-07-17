@@ -48,13 +48,14 @@ onMounted(() => {
         return
       }
     }
-    setCropperImg(trainImg.url);
+    // 要阻塞
+    setCropperImg(trainImg);
   });
   resizeCutterSpace();
 });
 
-function setCropperImg(imgUrl: string) {
-  const temp = imgUrl.replace('medium_jpg', 'large_jpg');
+function setCropperImg(imgUrl: TrainImage) {
+  const temp = imgUrl.url.replace('medium_jpg', 'large_jpg');
   const xhr = new XMLHttpRequest();
   xhr.open('POST', 'http://' + spiderServer + '/img2base64', true);
   xhr.setRequestHeader('Content-Type', 'application/json');
@@ -62,12 +63,12 @@ function setCropperImg(imgUrl: string) {
     if (xhr.status === 200) {
       const result = JSON.parse(xhr.responseText);
       option.value.img = result['Base64'];
-      if (selectTrainImg.value) {
-        selectTrainImg.value.large_base64 = result['Base64'];
+      if (imgUrl) {
+        imgUrl.large_base64 = result['Base64'];
         await saveSelectTrainImgToDB();
-        const imgDB = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', selectTrainImg.value.url);
+        const imgDB = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', imgUrl.url);
         if (imgDB) {
-          imgDB.large_base64 = selectTrainImg.value.large_base64;
+          imgDB.large_base64 = imgUrl.large_base64;
           await saveDataToGlobalDB('images', imgDB);
         }
       }

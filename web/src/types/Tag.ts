@@ -1,8 +1,8 @@
 ﻿// TODO 推测tag类型
 export class Tag {
-    public key: string;
+    public name: string;
 
-    constructor(key: string) {
-        this.key = key;
+    constructor(name: string) {
+        this.name = name;
     }
 }

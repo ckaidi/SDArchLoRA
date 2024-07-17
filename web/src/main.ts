@@ -21,6 +21,7 @@ import './assets/main.css'
 import 'vue-cropper/dist/index.css'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
+import {Tag} from "./types/Tag.ts";
 
 type Events = {
     selectModalOpenEvent: void;
@@ -41,6 +42,7 @@ export const conceptModalCloseEvent = 'conceptModalCloseEvent'
 
 export const concept = ref('');
 export const keyword = ref("");
+export const userTags = ref<Tag[]>([])
 export const initFinish = ref(false);
 export let selectTrainImg = ref<TrainImage | null>(null);
 export const trainHash = reactive<{ [key: string]: TrainImage }>({});
@@ -58,6 +60,7 @@ const alertPlaceholder = document.getElementById('liveAlertPlaceholder') as HTML
 window.onresize = (event: UIEvent) => {
     if (event.type == 'resize') {
         resizeCutterSpace();
+        resizeTrainImgSpace();
     }
 }
 
@@ -67,8 +70,30 @@ initDataBase().then(async () => {
     for (const trainImage of images) {
         trainHash[trainImage.url] = trainImage;
     }
+
+    const temp = await loadConceptDataFromDB<Tag>('user_tags');
+    if (temp) {
+        userTags.value = []
+        for (const tag of temp) {
+            userTags.value.push(tag);
+        }
+    }
     initFinish.value = true;
 });
+
+/**
+ * 重新计算放置训练图片空间的大小
+ */
+export function resizeTrainImgSpace() {
+    const trainImgContainer = document.getElementById('trainImgContainer');
+    if (trainImgContainer) {
+        const navigation = document.getElementById('navigationComponent');
+        if (navigation) {
+            const nh = navigation.offsetHeight;
+            trainImgContainer.style.maxHeight = (window.innerHeight - nh - 20) + 'px';
+        }
+    }
+}
 
 /**
  * 重新计算裁剪空间的大小
@@ -761,6 +786,9 @@ export async function saveSelectTrainImgToDB() {
         const cl = new TrainImage(selectTrainImg.value.name, selectTrainImg.value.url,
             selectTrainImg.value.page, selectTrainImg.value.indexInSearch, selectTrainImg.value.keyword);
         cl.large_base64 = selectTrainImg.value.large_base64;
+        for (const tag of selectTrainImg.value.tags) {
+            cl.tags.push(tag);
+        }
         await saveDataToConceptToDB('train_images', cl);
     }
 }

@@ -2,7 +2,7 @@
 import {
   deleteDBItemByKey, emitter, getConcept,
   getDataInDBByKey,
-  keyword,
+  keyword, resizeTrainImgSpace,
   saveDataToConceptToDB,
   searchArchDaily, selectTrainImg,
   showSearchImages,
@@ -11,6 +11,11 @@ import {
 import {TrainImage} from "../types/TrainImage.ts";
 import {ImageItem} from "../types/ImageItem.ts";
 import {ImageDB} from "../types/ImageDB.ts";
+import {onMounted} from "vue";
+
+onMounted(() => {
+  resizeTrainImgSpace();
+})
 
 const props = defineProps({
   deleteAble: {
@@ -83,7 +88,7 @@ function itemShow(item: TrainImage) {
 </script>
 
 <template>
-  <div class="container-fluid mt-2 mb-2 row p-0 m-0">
+  <div class="container-fluid mt-2 mb-2 row p-0 m-0" id="trainImgContainer">
     <div class="p-0">
       <button :disabled="true" type="button" class="btn btn-primary w-100" @click="search">训练图片</button>
       <div v-for="item in trainHash" class="card mt-1 mb-1" @mouseover="mouseover(item)" @mouseleave="mouseleave(item)"
@@ -103,4 +108,8 @@ function itemShow(item: TrainImage) {
 </template>
 
 <style scoped>
+#trainImgContainer {
+  overflow-y: auto; /* 启用垂直滚动 */
+  overflow-x: hidden; /* 隐藏水平滚动 */
+}
 </style>
