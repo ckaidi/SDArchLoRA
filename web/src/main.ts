@@ -45,8 +45,8 @@ export const initFinish = ref(false);
 export const concept = ref<string>('default');
 export const userTags = ref<Tag[]>([]);
 export const allConcepts = ref<ConceptDB[]>([]);
-export let selectTrainImg = ref<TrainImage | null>(null);
-export const trainHash = reactive<{ [key: string]: TrainImage }>({});
+export const selectTrainImg = ref<TrainImage | null>(null);
+export const trainHash = ref(reactive<{ [key: string]: TrainImage }>({}));
 export const showSearchImages = ref(reactive<{ [key: string]: ImageItem }>({}));
 
 const initDateBaseFinish = ref(false);
@@ -67,21 +67,17 @@ window.onresize = (event: UIEvent) => {
 
 initDataBase().then(async () => {
     initDateBaseFinish.value = true;
-    const images = await loadConceptDataFromDB<TrainImage>('train_images');
-    for (const trainImage of images) {
-        trainHash[trainImage.url] = trainImage;
-    }
-
-    const temp = await loadConceptDataFromDB<Tag>('user_tags');
-    if (temp) {
-        userTags.value = []
-        for (const tag of temp) {
-            userTags.value.push(tag);
+    allConcepts.value = await loadDataFromDB<ConceptDB>('spiders', 'concepts');
+    let c: ConceptDB = new ConceptDB('');
+    c.date = -1
+    for (const ar of allConcepts.value) {
+        if (ar.date > c.date) {
+            c = ar;
         }
     }
-    allConcepts.value = await loadDataFromDB<ConceptDB>('spiders', 'concepts');
-    concept.value = allConcepts.value[0].name;
     initFinish.value = true;
+    await changeWorkSpaceConcept(c);
+    console.log('初始化完成')
 });
 
 /**
@@ -584,24 +580,28 @@ export async function loadConceptDataFromDB<T>(tableName: string): Promise<T[]> 
 
 // 保存数据到指定到库和表
 export async function saveDataToGlobalDB(tableName: string, data: object) {
-    const db = await openDataBase('spiders', (_) => {
-    });
+    try {
+        const db = await openDataBase('spiders', (_) => {
+        });
 
-    // 创建一个读写事务，目标对象存储空间为images
-    const transaction = db.transaction([tableName], "readwrite");
-    // 获取对象存储空间
-    const store = transaction.objectStore(tableName);
-    // 向对象存储空间中添加或更新一条记录
-    const imgRequest = store.put(data);
+        // 创建一个读写事务，目标对象存储空间为images
+        const transaction = db.transaction([tableName], "readwrite");
+        // 获取对象存储空间
+        const store = transaction.objectStore(tableName);
+        // 向对象存储空间中添加或更新一条记录
+        const imgRequest = store.put(data);
 
-    imgRequest.onsuccess = () => {
-        console.log("Image saved successfully!");
-    };
+        imgRequest.onsuccess = () => {
+            console.log("Image saved successfully!");
+        };
 
-    imgRequest.onerror = (e) => {
-        const request = e.target as IDBRequest;
-        console.error("Error saving the image:", request.error);
-    };
+        imgRequest.onerror = (e) => {
+            const request = e.target as IDBRequest;
+            console.error("Error saving the image:", request.error);
+        };
+    } catch (e) {
+        console.error(e)
+    }
 }
 
 
@@ -694,4 +694,29 @@ export async function saveTrainImgToDB(item: TrainImage) {
         }
         await saveDataToConceptToDB('train_images', cl);
     }
+}
+
+/**
+ * 切换工作区概念
+ * @param conceptTo 概念
+ */
+export async function changeWorkSpaceConcept(conceptTo: ConceptDB) {
+    concept.value = conceptTo.name;
+    trainHash.value = {};
+    userTags.value = [];
+    const images = await loadConceptDataFromDB<TrainImage>('train_images');
+    for (const trainImage of images) {
+        trainHash.value[trainImage.url] = trainImage;
+    }
+
+    const temp = await loadConceptDataFromDB<Tag>('user_tags');
+    if (temp) {
+        for (const tag of temp) {
+            userTags.value.push(tag);
+        }
+    }
+    conceptTo.date = Date.now();
+    const copy = new ConceptDB(conceptTo.name);
+    copy.date = conceptTo.date;
+    await saveDataToGlobalDB('concepts', copy);
 }

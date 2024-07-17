@@ -2,7 +2,7 @@
 import {
   concept,
   deleteDBItemByKey, emitter,
-  getDataInDBByKey,
+  getDataInDBByKey, initFinish,
   keyword, resizeTrainImgSpace,
   saveDataToConceptToDB,
   searchArchDaily, selectTrainImg,
@@ -14,7 +14,7 @@ import {ImageItem} from "../types/ImageItem.ts";
 import {ImageDB} from "../types/ImageDB.ts";
 import {onMounted} from "vue";
 
-onMounted(() => {
+onMounted(async () => {
   resizeTrainImgSpace();
 })
 

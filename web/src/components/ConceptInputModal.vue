@@ -4,6 +4,7 @@ import {addConcept, concept, conceptModalOpenEvent, emitter} from "../main.ts";
 import {Modal} from "bootstrap";
 
 const conceptInput = ref<HTMLInputElement | null>(null);
+const conceptUserInput = ref<string>(concept.value);
 
 emitter.on(conceptModalOpenEvent, () => {
   const modelElement = document.getElementById('staticBackdrop');
@@ -41,12 +42,12 @@ function keyboardEnter() {
         <div class="modal-body">
           <form @submit.prevent="keyboardEnter">
             <input type="text" class="form-control" id="message-text" placeholder="lora概念" ref="conceptInput"
-                   v-model="concept">
+                   v-model="conceptUserInput">
           </form>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary"
-                  @click="addConcept(concept)" data-bs-dismiss="modal"
+                  @click="addConcept(conceptUserInput)" data-bs-dismiss="modal"
                   id="staticBackdropButton">确定
           </button>
         </div>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {ref} from "vue";
-import {allConcepts, concept, conceptModalOpenEvent, emitter} from "../main.ts";
+import {allConcepts, changeWorkSpaceConcept, concept, conceptModalOpenEvent, emitter} from "../main.ts";
+import {ConceptDB} from "../types/ConceptDB.ts";
 
 // 定义接收的 props
 defineProps({
@@ -25,8 +26,8 @@ function getIsSelected(item: string) {
   return concept.value == item;
 }
 
-function conceptChange(e: Event) {
-  console.log(e);
+function conceptChange(i: ConceptDB) {
+  changeWorkSpaceConcept(i);
 }
 
 function addConcept() {
@@ -56,7 +57,8 @@ function addConcept() {
               </a>
               <ul class="dropdown-menu text-small shadow">
                 <li v-for="item in allConcepts" class="dropdown-item"
-                    @click="conceptChange"
+                    style="cursor: pointer"
+                    @click="conceptChange(item)"
                     :class="{'active':getIsSelected(item.name)}">{{ item.name }}
                 </li>
                 <li>
