@@ -1,7 +1,6 @@
 import 'jquery'
 import 'popper.js'
 import mitt from 'mitt'
-import {v4} from 'uuid'
 import App from './App.vue'
 import {createApp, reactive, ref} from 'vue'
 import VueCookies from 'vue-cookies'
@@ -55,6 +54,13 @@ instance.use(router)
 instance.use(VueCookies)
 instance.mount('#app')// 实现一个 once 功能
 const alertPlaceholder = document.getElementById('liveAlertPlaceholder') as HTMLElement
+
+window.onresize = (event: UIEvent) => {
+    if (event.type == 'resize') {
+        resizeCutterSpace();
+    }
+}
+
 initDataBase().then(async () => {
     initDateBaseFinish.value = true;
     const images = await loadConceptDataFromDB<TrainImage>('train_images');
@@ -63,6 +69,20 @@ initDataBase().then(async () => {
     }
     initFinish.value = true;
 });
+
+/**
+ * 重新计算裁剪空间的大小
+ */
+export function resizeCutterSpace() {
+    const cutElement = document.getElementById('cut');
+    if (cutElement) {
+        const navigation = document.getElementById('navigationComponent');
+        if (navigation) {
+            const nh = navigation.offsetHeight;
+            cutElement.style.height = (window.innerHeight - nh - 70) + 'px';
+        }
+    }
+}
 
 // 插入概念数据库和项目数据库以及图片数据库
 async function initDataBase() {
@@ -264,6 +284,15 @@ export async function saveNewPage(data: PageDataDB[], page: number, project: num
     }
 }
 
+// 向后端发送请求，爬取archidaily
+export function searchArchDaily(keyword: string, onReceiveImg: (arg: string) => void) {
+    // 创建一个 WebSocket 对象，连接到本地的 8080 端口
+    if (keyword !== "") {
+        const ws = new WebSocket("ws://" + spiderServer + "/archdaily?keyword=" + keyword + "&page=1&projectCount=-1");
+        searchCore(ws, onReceiveImg);
+    }
+}
+
 // 保存图片到page data里
 function searchCore(ws: WebSocket, onReceiveImg: (arg: string) => void) {
     searchImageCount = 0;
@@ -291,15 +320,6 @@ function searchCore(ws: WebSocket, onReceiveImg: (arg: string) => void) {
         // 连接错误，打印信息
         console.log("WebSocket 连接错误：", event);
     };
-}
-
-// 向后端发送请求，爬取archidaily
-export function searchArchDaily(keyword: string, onReceiveImg: (arg: string) => void) {
-    // 创建一个 WebSocket 对象，连接到本地的 8080 端口
-    if (keyword !== "") {
-        const ws = new WebSocket("ws://" + spiderServer + "/archdaily?keyword=" + keyword + "&page=1&projectCount=-1");
-        searchCore(ws, onReceiveImg);
-    }
 }
 
 // 增加或更新
@@ -585,14 +605,17 @@ export function getConcept(): Promise<string> {
     });
 }
 
-// 下载文件到zip
-export async function downloadMultipleFilesAsZip(allImages: any[]) {
+/**
+ * 下载训练文件到zip
+ */
+// 
+export async function downloadMultipleFilesAsZip() {
     const zip = new JSZip();
     let index = 0;
-    for (const image of allImages) {
+    for (const image of Object.values(trainHash)) {
         let tagText = "";
-        for (const tag of image.tag) {
-            tagText += tag.tag + ','
+        for (const tag of image.tags) {
+            tagText += tag + ','
         }
         // 添加文件到ZIP
         zip.file(index + '.txt', tagText);
@@ -637,13 +660,6 @@ export async function loadConceptDataFromDB<T>(tableName: string): Promise<T[]> 
     const concept = await getConcept();
     if (!concept) return [];
     return await loadDataFromDB<T>(concept, tableName);
-}
-
-// 生成客户端随机id
-export function createClientId() {
-    let uuid = sessionStorage.getItem('clientId')
-    if (uuid === null)
-        sessionStorage.setItem('clientId', v4())
 }
 
 // 保存数据到指定到库和表
@@ -735,4 +751,16 @@ export async function deleteDBItemByKey(dbname: string, tableName: string, key: 
     const transaction = db.transaction([tableName], 'readwrite'); // 创建读写事务
     const store = transaction.objectStore(tableName);
     store.delete(key);
+}
+
+/**
+ * 保存选中的训练图片到数据库
+ */
+export async function saveSelectTrainImgToDB() {
+    if (selectTrainImg.value) {
+        const cl = new TrainImage(selectTrainImg.value.name, selectTrainImg.value.url,
+            selectTrainImg.value.page, selectTrainImg.value.indexInSearch, selectTrainImg.value.keyword);
+        cl.large_base64 = selectTrainImg.value.large_base64;
+        await saveDataToConceptToDB('train_images', cl);
+    }
 }

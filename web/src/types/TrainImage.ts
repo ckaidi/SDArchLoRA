@@ -8,8 +8,6 @@ export class TrainImage {
     public large_base64: string = '';
     public show: boolean;
     public isSelected: boolean = false;
-    public large_width: number = -1;
-    public large_height: number = -1;
 
     constructor(name: string, url: string, page: number, indexInSearch: number, keyword: string) {
         this.name = name;

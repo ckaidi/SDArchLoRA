@@ -46,7 +46,7 @@ onMounted(async () => {
 async function putInTrain(item: ImageItem) {
   if (Reflect.has(showSearchImages.value, item.src)) {
     Reflect.deleteProperty(showSearchImages.value, item.src);
-    const trainImg = new TrainImage(item.name, item.src, currentPage.value, item.index, keyword.value, '');
+    const trainImg = new TrainImage(item.name, item.src, currentPage.value, item.index, keyword.value);
     trainHash[trainImg.url] = trainImg;
     await saveDataToConceptToDB('train_images', trainImg);
   }
@@ -60,7 +60,7 @@ async function addImages(imageText: string) {
   const jsonData = JSON.parse(imageText);
   if ("document_type" in jsonData) {
     // 保存项目信息
-    await saveProjectInfoToDB(new ProjectDB(jsonData.url, jsonData.CreateAt, jsonData.UpdateAt, jsonData.author, jsonData.bim,
+    await saveProjectInfoToDB(new ProjectDB(jsonData.document_id, jsonData.CreateAt, jsonData.UpdateAt, jsonData.author, jsonData.bim,
         jsonData.categories, jsonData.document_type, jsonData.location, jsonData.meta_description, jsonData.offices,
         jsonData.photographers, jsonData.tags, jsonData.title, jsonData.url, jsonData.year));
   } else {

@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import {CropperOptions} from "../types/CropperOptions.ts";
-import {onBeforeUnmount, onMounted, ref} from "vue";
+import {onMounted, ref} from "vue";
 import {
-  emitter, getDataInDBByKey,
-  loadSingleDataFromDB, saveDataToConceptToDB,
+  emitter,
+  getDataInDBByKey,
+  resizeCutterSpace,
   saveDataToGlobalDB,
-  saveTaggerImageToDB,
+  saveSelectTrainImgToDB,
   selectTrainImg,
-  spiderServer
+  spiderServer, trainHash
 } from "../main.ts";
-import {useRoute} from "vue-router";
-import {ImgData} from "../types/ImgData.ts";
-import {ProjectDB} from "../types/ProjectDB.ts";
 import NavigationComponent from "../components/NavigationComponent.vue";
 import SelectedImgComponent from "../components/SelectedImgComponent.vue";
 import 'vue-cropper/dist/index.css'
@@ -19,12 +17,16 @@ import {VueCropper} from "vue-cropper";
 import {TrainImage} from "../types/TrainImage.ts";
 import {ImageDB} from "../types/ImageDB.ts";
 
-const route = useRoute();
+interface IRatio {
+  w: number;
+  h: number;
+}
+
 const currentTab = ref("裁剪");
 const cropper = ref<typeof VueCropper>(VueCropper);
 const cropperSpace = ref<HTMLElement | null>(null);
 const option = ref<CropperOptions>(new CropperOptions());
-const rationHistory = [
+const rationHistory: IRatio[] = [
   {w: 1, h: 1},
   {w: 3, h: 2},
   {w: 4, h: 3},
@@ -35,45 +37,21 @@ const rationHistory = [
   {w: 21, h: 9},
   {w: 1, h: 2},
 ];
+const selectRatio = ref<IRatio>({w: 1, h: 1});
 
 onMounted(() => {
-  emitter.on("selectTrainImgChange", (trainImg: TrainImage) => {
+  emitter.on("selectTrainImgChange", async (trainImg: TrainImage) => {
     if (trainImg.large_base64 != '') {
-      option.value.img = trainImg.large_base64;
-    } else {
-      setCropperImg(trainImg.url);
+      const imgDB = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', trainImg.url);
+      if (imgDB) {
+        option.value.img = imgDB.large_base64;
+        return
+      }
     }
+    setCropperImg(trainImg.url);
   });
-  if (cropperSpace.value) {
-    const observer = new ResizeObserver(entries => {
-      for (let entry of entries) {
-        const {width, height} = entry.contentRect;
-        console.log(`Element size changed to: ${width}px wide by ${height}px tall.`);
-        resizeCropperSpace();
-      }
-    });
-
-    observer.observe(cropperSpace.value);
-
-    // 清理函数
-    onBeforeUnmount(() => {
-      if (cropperSpace.value) {
-        observer.unobserve(cropperSpace.value);
-      }
-    });
-  }
+  resizeCutterSpace();
 });
-
-function resizeCropperSpace() {
-  const cutElement = document.getElementById('cut');
-  if (cutElement) {
-    const navigation = document.getElementById('navigationComponent');
-    if (navigation) {
-      const nh = navigation.offsetHeight;
-      cutElement.style.height = (window.innerHeight - nh - 70) + 'px';
-    }
-  }
-}
 
 function setCropperImg(imgUrl: string) {
   const temp = imgUrl.replace('medium_jpg', 'large_jpg');
@@ -85,20 +63,11 @@ function setCropperImg(imgUrl: string) {
       const result = JSON.parse(xhr.responseText);
       option.value.img = result['Base64'];
       if (selectTrainImg.value) {
-        selectTrainImg.value.large_width = parseInt(result['Width']);
-        selectTrainImg.value.large_height = parseInt(result['Height']);
         selectTrainImg.value.large_base64 = result['Base64'];
-        const cl = new TrainImage(selectTrainImg.value.name, selectTrainImg.value.url,
-            selectTrainImg.value.page, selectTrainImg.value.indexInSearch, selectTrainImg.value.keyword);
-        cl.large_base64 = selectTrainImg.value.large_base64;
-        cl.large_width = selectTrainImg.value.large_width;
-        cl.large_height = selectTrainImg.value.large_height;
-        await saveDataToConceptToDB('train_images', cl);
+        await saveSelectTrainImgToDB();
         const imgDB = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', selectTrainImg.value.url);
         if (imgDB) {
           imgDB.large_base64 = selectTrainImg.value.large_base64;
-          imgDB.large_width = selectTrainImg.value.large_width;
-          imgDB.large_height = selectTrainImg.value.large_height;
           await saveDataToGlobalDB('images', imgDB);
         }
       }
@@ -109,111 +78,22 @@ function setCropperImg(imgUrl: string) {
   xhr.send(temp);
 }
 
-function nextStep() {
+function saveCropperResult() {
   document.createElement('a');
   // 输出
-  cropper.value.VueCropper.getCropData(async (data: any) => {
-    let document_id = route.query.document_id;
-    const project = (await loadSingleDataFromDB<ProjectDB>('projects', 'name', 'document_id', document_id));
-    if (!project) {
-      window.location.href = '#/img2img'
-      return;
-    }
-    const imgName = route.query.imgName?.toString()
-    if (imgName) {
-      let imgData = new ImgData(imgName, data);
-      if (project) {
-        if (project.author !== "") {
-          imgData.projecttags.push(project.author);
-        }
-        if (project.categories !== "") {
-          let tags = project.categories.split(',')
-          for (const tagsKey of tags) {
-            if (tagsKey !== "")
-              imgData.projecttags.push(tagsKey);
-          }
-        }
-        if (project.location !== "") {
-          imgData.projecttags.push(project.location);
-        }
-        if (project.meta_description !== "") {
-          imgData.projecttags.push(project.meta_description);
-        }
-        if (project.offices !== "") {
-          let tags = project.offices.split(',')
-          for (const tagsKey of tags) {
-            if (tagsKey !== "")
-              imgData.projecttags.push(tagsKey);
-          }
-        }
-        if (project.tags !== "") {
-          let tags = project.tags.split(',')
-          for (const tagsKey of tags) {
-            if (tagsKey !== "")
-              imgData.projecttags.push(tagsKey);
-          }
-        }
-      }
-      const kw = sessionStorage.getItem('keyword');
-      if (kw) {
-        imgData.keyword = kw;
-        await saveTaggerImageToDB(imgData)
-        window.location.href = '#/img2img'
-      }
+  cropper.value.getCropData(async (base64String: string) => {
+    if (selectTrainImg.value) {
+      selectTrainImg.value.large_base64 = base64String;
+      trainHash[selectTrainImg.value.url] = selectTrainImg.value;
+      await saveSelectTrainImgToDB();
     }
   })
 }
 
-async function skip() {
-  document.createElement('a');
-  // 输出
-  let document_id = route.query.document_id;
-  const project = await loadSingleDataFromDB<ProjectDB>('projects', 'name', 'document_id', document_id);
-  if (!project) {
-    window.location.href = '#/img2img'
-    return;
-  }
-  const imgName = route.query.imgName?.toString();
-  if (imgName) {
-    let imgData = new ImgData(imgName, option.value.img);
-    imgData.projecttags = []
-    imgData.tags = '[]'
-    if (project.author !== "") {
-      imgData.projecttags.push(project.author);
-    }
-    if (project.categories !== "") {
-      let tags = project.categories.split(',')
-      for (const tagsKey of tags) {
-        if (tagsKey !== "")
-          imgData.projecttags.push(tagsKey);
-      }
-    }
-    if (project.location !== "") {
-      imgData.projecttags.push(project.location);
-    }
-    if (project.meta_description !== "") {
-      imgData.projecttags.push(project.meta_description);
-    }
-    if (project.offices !== "") {
-      let tags = project.offices.split(',')
-      for (const tagsKey of tags) {
-        if (tagsKey !== "")
-          imgData.projecttags.push(tagsKey);
-      }
-    }
-    if (project.tags !== "") {
-      let tags = project.tags.split(',')
-      for (const tagsKey of tags) {
-        if (tagsKey !== "")
-          imgData.projecttags.push(tagsKey);
-      }
-    }
-    const kw = sessionStorage.getItem('keyword');
-    if (kw) {
-      imgData.keyword = kw;
-      await saveTaggerImageToDB(imgData)
-    }
-    window.location.href = '#/img2img'
+function rationSelectChange(e: Event) {
+  if (e.type == 'change' && selectRatio.value) {
+    option.value.fixedNumber[1] = selectRatio.value.h;
+    option.value.fixedNumber[0] = selectRatio.value.w;
   }
 }
 </script>
@@ -251,12 +131,12 @@ async function skip() {
             </div>
           </div>
           <div class="col-2">
-            <select class="form-select" aria-label="Default select example">
-              <option v-for="tag in rationHistory" :value="tag">{{ tag.h }}:{{ tag.w }}</option>
+            <select class="form-select" aria-label="Default select example" v-model="selectRatio"
+                    @change="rationSelectChange">
+              <option v-for="tag in rationHistory" :value="tag">{{ tag.w }}:{{ tag.h }}</option>
             </select>
           </div>
-          <button @click="nextStep" class="col-2 btn btn-primary h-100">保存</button>
-          <!--          <button v-show="false" @click="skip" class="col-2 btn btn-primary">稍后自行裁剪</button>-->
+          <button @click="saveCropperResult" class="col-2 btn btn-primary h-100">保存</button>
         </div>
       </div>
     </div>
@@ -274,25 +154,8 @@ async function skip() {
   margin: 30px auto;
 }
 
-.c-item {
-  max-width: 800px;
-  margin: 20px auto 10px;
-}
-
-.test-button {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: center;
-  justify-content: center;
-}
-
 .show-info h2 {
   line-height: 50px;
-}
-
-.c-item {
-  display: block;
-  user-select: none;
 }
 
 @keyframes slide {

@@ -75,6 +75,11 @@ function imgClick(item: TrainImage) {
     emitter.emit("selectTrainImgChange", item);
   }
 }
+
+function itemShow(item: TrainImage) {
+  if (item.large_base64 && item.large_base64 != '') return item.large_base64;
+  return item.url;
+}
 </script>
 
 <template>
@@ -91,7 +96,7 @@ function imgClick(item: TrainImage) {
             删除
           </button>
         </div>
-        <img class="rounded-1" :src=item.url :alt="item.name" style="cursor: pointer">
+        <img class="rounded-1" :src=itemShow(item) :alt="item.name" style="cursor: pointer">
       </div>
     </div>
   </div>

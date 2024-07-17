@@ -18,7 +18,6 @@ function RandomIndex(min: number, max: number, i: number): number {
     return index;
 }
 
-
 /**
  * 随机生成字符串
  * @param len 指定生成字符串长度
