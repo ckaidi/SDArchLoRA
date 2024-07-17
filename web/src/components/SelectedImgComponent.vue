@@ -2,8 +2,7 @@
 import {
   concept,
   deleteDBItemByKey, emitter,
-  getDataInDBByKey, initFinish,
-  keyword, resizeTrainImgSpace,
+  getDataInDBByKey, keyword, resizeTrainImgSpace,
   saveDataToConceptToDB,
   searchArchDaily, selectTrainImg,
   showSearchImages,
@@ -60,7 +59,7 @@ function mouseleave(item: TrainImage) {
  */
 async function deleteTrainImg(item: TrainImage) {
   if (item.url in trainHash) {
-    delete trainHash[item.url];
+    delete trainHash.value[item.url];
     const imageDB = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', item.url);
     if (imageDB) {
       await deleteDBItemByKey(concept.value, 'train_images', item.name);

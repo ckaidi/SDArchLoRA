@@ -211,41 +211,45 @@ export async function getDataInDBByKey<T>(dbName: string, tableName: string, key
 }
 
 // 保存概念到数据库
-export async function saveConceptToDB(key: string) {
-    const db = await openDataBase('spiders', (db_temp) => {
-        // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
-        if (!db_temp.objectStoreNames.contains('concepts')) {
-            // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
-            db_temp.createObjectStore('concepts', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
-        }
-    });
+export async function saveConceptToDB(key: ConceptDB) {
+    try {
+        const db = await openDataBase('spiders', (db_temp) => {
+            // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
+            if (!db_temp.objectStoreNames.contains('concepts')) {
+                // 创建一个新的对象存储空间images，并设置keyPath为name，用于唯一标识每条记录
+                db_temp.createObjectStore('concepts', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+            }
+        });
 
-    // 创建一个读写事务，目标对象存储空间为concepts
-    const transaction = db.transaction(['concepts'], "readwrite");
-    // 获取对象存储空间
-    const store = transaction.objectStore('concepts');
-    // 向对象存储空间中添加或更新一条记录
-    const imgRequest = store.put({name: key});
+        // 创建一个读写事务，目标对象存储空间为concepts
+        const transaction = db.transaction(['concepts'], "readwrite");
+        // 获取对象存储空间
+        const store = transaction.objectStore('concepts');
+        // 向对象存储空间中添加或更新一条记录
+        const imgRequest = store.put(key);
 
-    imgRequest.onsuccess = () => {
-        console.log("概念保存成功!");
-    };
+        imgRequest.onsuccess = () => {
+            console.log("概念保存成功!");
+        };
 
-    imgRequest.onerror = (e) => {
-        const request = e.target as IDBRequest;
-        console.error("概念保存失败!", request.error);
-    };
+        imgRequest.onerror = (e) => {
+            const request = e.target as IDBRequest;
+            console.error("概念保存失败!", request.error);
+        };
 
-    // 创建概念相关数据库
-    await openDataBase(key, (db_temp) => {
-        // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
-        if (!db_temp.objectStoreNames.contains('user_tags')) {
-            db_temp.createObjectStore('user_tags', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
-        }
-        if (!db_temp.objectStoreNames.contains('train_images')) {
-            db_temp.createObjectStore('train_images', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
-        }
-    });
+        // 创建概念相关数据库
+        await openDataBase(key.name, (db_temp) => {
+            // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
+            if (!db_temp.objectStoreNames.contains('user_tags')) {
+                db_temp.createObjectStore('user_tags', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+            }
+            if (!db_temp.objectStoreNames.contains('train_images')) {
+                db_temp.createObjectStore('train_images', {keyPath: "name"}).createIndex("nameIndex", "name", {unique: true});
+            }
+        });
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 // 添加训练概念
@@ -255,8 +259,10 @@ export async function addConcept(concept: string, isModelOpen: boolean = true) {
         if (isModelOpen)
             emitter.emit(conceptModalOpenEvent);
     } else {
-        sessionStorage.setItem('concept', concept)
-        await saveConceptToDB(concept)
+        sessionStorage.setItem('concept', concept);
+        const t = new ConceptDB(concept);
+        t.date = Date.now();
+        await saveConceptToDB(t);
         emitter.emit(conceptModalCloseEvent, concept);
     }
 }

@@ -89,7 +89,7 @@ async function selectTag(tag: string, flag: boolean) {
 }
 
 async function deleteTag(tag: string) {
-  for (const images of Object.values(trainHash)) {
+  for (const images of Object.values(trainHash.value)) {
     const lb = images.tags.length;
     images.tags = images.tags.filter(element => element !== tag);
     const la = images.tags.length;

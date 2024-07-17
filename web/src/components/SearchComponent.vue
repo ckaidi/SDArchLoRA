@@ -47,7 +47,7 @@ async function putInTrain(item: ImageItem) {
   if (Reflect.has(showSearchImages.value, item.src)) {
     Reflect.deleteProperty(showSearchImages.value, item.src);
     const trainImg = new TrainImage(item.name, item.src, currentPage.value, item.index, keyword.value);
-    trainHash[trainImg.url] = trainImg;
+    trainHash.value[trainImg.url] = trainImg;
     await saveDataToConceptToDB('train_images', trainImg);
   }
   if (waterfall.value) {
@@ -114,7 +114,7 @@ async function readPage(pageNumber: number) {
   for (const item of data) {
     const imageData = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', item.url_hash);
     if (imageData) {
-      if (!trainHash[imageData.url])
+      if (!trainHash.value[imageData.url])
         showSearchImages.value[imageData.url] = new ImageItem([keyword], imageData.title,
             imageData.document_id, imageData.url, Object.keys(showSearchImages.value).length);
     } else {

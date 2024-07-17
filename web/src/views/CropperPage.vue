@@ -88,7 +88,7 @@ function saveCropperResult() {
   cropper.value.getCropData(async (base64String: string) => {
     if (selectTrainImg.value) {
       selectTrainImg.value.large_base64 = base64String;
-      trainHash[selectTrainImg.value.url] = selectTrainImg.value;
+      trainHash.value[selectTrainImg.value.url] = selectTrainImg.value;
       await saveSelectTrainImgToDB();
     }
   })
