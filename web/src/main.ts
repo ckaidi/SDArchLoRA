@@ -12,7 +12,7 @@ import {ProjectDB} from "./types/ProjectDB.ts";
 import {ConceptDB} from "./types/ConceptDB.ts";
 import {SearchDB} from "./types/SearchDB.ts";
 import {PageDataDB} from "./types/PageDataDB.ts";
-import {getRandomString, sleep} from "./utils.ts";
+import {getRandomString} from "./utils.ts";
 import {PageImageDB} from "./types/PageImageDB.ts";
 import {ImageItem} from "./types/ImageItem.ts";
 import {TrainImage} from "./types/TrainImage.ts";
@@ -40,10 +40,11 @@ export const selectModalOpenEvent = 'selectModalOpenEvent'
 export const conceptModalOpenEvent = 'conceptModalOpenEvent'
 export const conceptModalCloseEvent = 'conceptModalCloseEvent'
 
-export const concept = ref('');
 export const keyword = ref("");
-export const userTags = ref<Tag[]>([])
 export const initFinish = ref(false);
+export const concept = ref<string>('default');
+export const userTags = ref<Tag[]>([]);
+export const allConcepts = ref<ConceptDB[]>([]);
 export let selectTrainImg = ref<TrainImage | null>(null);
 export const trainHash = reactive<{ [key: string]: TrainImage }>({});
 export const showSearchImages = ref(reactive<{ [key: string]: ImageItem }>({}));
@@ -78,6 +79,8 @@ initDataBase().then(async () => {
             userTags.value.push(tag);
         }
     }
+    allConcepts.value = await loadDataFromDB<ConceptDB>('spiders', 'concepts');
+    concept.value = allConcepts.value[0].name;
     initFinish.value = true;
 });
 
@@ -138,6 +141,7 @@ async function initDataBase() {
         }
     });
     await addConcept('default', false);
+    concept.value = 'default';
 }
 
 // 所有方法都从这打开数据库
@@ -264,9 +268,8 @@ export async function addConcept(concept: string, isModelOpen: boolean = true) {
 
 // 保存数据到概念数据库
 export async function saveDataToConceptToDB(tableName: string, buffer: object) {
-    const concept = await getConcept();
-    if (!concept) return;
-    const db = await openDataBase(concept, (_) => {
+    if (!concept.value) return;
+    const db = await openDataBase(concept.value, (_) => {
     });
 
 
@@ -359,52 +362,6 @@ export async function addOrUpdateSearchToDB(keyword: string) {
     }
 }
 
-// 更新物体
-export async function updateConceptItem(tableName: string, key: IDBValidKey | IDBKeyRange, field: any, newValue: any) {
-    let concept = await getConcept();
-    const db = await openDataBase(concept, (db_temp) => {
-        // 关闭新创建的数据库
-        db_temp.close();
-        // 删除新创建的数据库
-        indexedDB.deleteDatabase(concept);
-    });
-    if (!db) {
-        return;
-    }
-
-    const transaction = db.transaction([tableName], 'readwrite'); // 创建读写事务
-    const store = transaction.objectStore(tableName);
-
-    const itemRequest = store.get(key); // 假设 'a' 是你想要修改的项的键
-
-    itemRequest.onsuccess = () => {
-        const data = itemRequest.result;
-        if (data) {
-            // 修改page字段
-
-            data[field] = newValue;
-            const updateRequest = store.put(data); // 将修改后的对象写回数据库
-
-            updateRequest.onsuccess = () => {
-                console.log('Item updated successfully');
-            };
-
-            updateRequest.onerror = (event) => {
-                const request = event.target as IDBRequest;
-                console.error('Error updating item:', request.error);
-            };
-        } else {
-            console.log(key);
-            console.warn('Item not found');
-        }
-    };
-
-    itemRequest.onerror = (event) => {
-        const request = event.target as IDBRequest;
-        console.error('Error fetching item:', request.error);
-    };
-}
-
 // 从数据库中读取指定key的数据
 export function loadSingleDataFromDB<T>(dbName: string, tableName: string, keyPathName: string, key: any): Promise<T | null> {
     return new Promise(async (resolve, reject) => {
@@ -434,11 +391,6 @@ export function loadSingleDataFromDB<T>(dbName: string, tableName: string, keyPa
         }
     });
 }
-
-export async function saveTaggerImageToDB(buffer: any) {
-    await saveDataToConceptToDB("train_images", buffer)
-}
-
 
 // 弹出提示
 export const appendAlert = (message: string, type: string) => {
@@ -592,44 +544,6 @@ export function loadFirstDataOrNullFromDB<T>(dbname: string, tableName: string):
     });
 }
 
-function once(event: any, handler: (arg: any) => void) {
-    const wrappedHandler = (eventData: any) => {
-        emitter.off(event, wrappedHandler);  // 监听一次后移除
-        handler(eventData);
-    };
-    emitter.on(event, wrappedHandler);
-}
-
-// 获取训练概念
-export function getConcept(): Promise<string> {
-    return new Promise(async (resolve, _) => {
-        while (!initDateBaseFinish.value) {
-            await sleep(100);
-        }
-        const concept = sessionStorage.getItem('concept');
-        if (concept === null || concept == undefined) {
-            const concepts = await loadDataFromDB<ConceptDB>('spiders', 'concepts')
-            if (concepts !== null && concepts !== undefined && concepts.length > 0) {
-                sessionStorage.setItem('concept', concepts[0].name);
-                resolve(concepts[0].name);
-                return;
-            }
-
-            // 注册事件监听器，用于在模态对话框关闭后处理
-            once(conceptModalCloseEvent, (userInput) => {
-                // 用户输入或从对话框获取的信息作为结果返回
-                resolve(userInput);
-            });
-
-            // 触发事件打开模态对话框
-            emitter.emit(conceptModalOpenEvent);
-        } else {
-            // 如果已有concept则直接返回
-            resolve(concept);
-        }
-    });
-}
-
 /**
  * 下载训练文件到zip
  */
@@ -644,7 +558,7 @@ export async function downloadMultipleFilesAsZip() {
         }
         // 添加文件到ZIP
         zip.file(index + '.txt', tagText);
-        zip.file(index + '.jpg', base64ToBlob(image.url, 'jpeg'), {base64: true});
+        zip.file(index + '.jpg', base64ToBlob(image.large_base64, 'jpeg'), {base64: true});
         index++;
     }
 
@@ -654,7 +568,7 @@ export async function downloadMultipleFilesAsZip() {
         const a = document.createElement('a');
         const url = URL.createObjectURL(content);
         a.href = url;
-        a.download = '50_' + await getConcept() + '.zip'; // 设置下载的文件名
+        a.download = '50_' + concept.value + '.zip'; // 设置下载的文件名
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -663,28 +577,9 @@ export async function downloadMultipleFilesAsZip() {
 }
 
 // 删除概念
-export async function deleteConceptItem(tableName: string, key: string) {
-    let concept = sessionStorage.getItem('concept');
-    if (!concept) return;
-    const db = await openDataBase(concept, (db_temp) => {
-        // 关闭新创建的数据库
-        db_temp.close();
-        // 删除新创建的数据库
-        indexedDB.deleteDatabase(concept);
-    });
-    if (!db) {
-        return;
-    }
-
-    const transaction = db.transaction([tableName], 'readwrite'); // 创建读写事务
-    const store = transaction.objectStore(tableName);
-    store.delete(key);
-}
-
 export async function loadConceptDataFromDB<T>(tableName: string): Promise<T[]> {
-    const concept = await getConcept();
-    if (!concept) return [];
-    return await loadDataFromDB<T>(concept, tableName);
+    if (!concept.value) return [];
+    return await loadDataFromDB<T>(concept.value, tableName);
 }
 
 // 保存数据到指定到库和表
@@ -782,11 +677,19 @@ export async function deleteDBItemByKey(dbname: string, tableName: string, key: 
  * 保存选中的训练图片到数据库
  */
 export async function saveSelectTrainImgToDB() {
-    if (selectTrainImg.value) {
-        const cl = new TrainImage(selectTrainImg.value.name, selectTrainImg.value.url,
-            selectTrainImg.value.page, selectTrainImg.value.indexInSearch, selectTrainImg.value.keyword);
-        cl.large_base64 = selectTrainImg.value.large_base64;
-        for (const tag of selectTrainImg.value.tags) {
+    if (selectTrainImg.value)
+        return saveTrainImgToDB(selectTrainImg.value);
+}
+
+/**
+ * 保存选中的训练图片到数据库
+ */
+export async function saveTrainImgToDB(item: TrainImage) {
+    if (item) {
+        const cl = new TrainImage(item.name, item.url,
+            item.page, item.indexInSearch, item.keyword);
+        cl.large_base64 = item.large_base64;
+        for (const tag of item.tags) {
             cl.tags.push(tag);
         }
         await saveDataToConceptToDB('train_images', cl);

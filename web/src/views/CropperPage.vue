@@ -52,6 +52,9 @@ onMounted(() => {
     setCropperImg(trainImg);
   });
   resizeCutterSpace();
+  if (selectTrainImg.value) {
+    option.value.img = selectTrainImg.value.large_base64;
+  }
 });
 
 function setCropperImg(imgUrl: TrainImage) {
@@ -103,7 +106,7 @@ function rationSelectChange(e: Event) {
   <NavigationComponent id="navigationComponent" :activate-tab="currentTab"/>
   <div class="container-fluid row p-0 m-0" style="height: 80%;position: fixed">
     <div class="col-1 p-1 m-0">
-      <SelectedImgComponent :delete-able="false"/>
+      <SelectedImgComponent :delete-able="false" :is-header="false"/>
     </div>
     <div class="row col-11 m-0 d-flex" id="cropper-space" ref="cropperSpace" v-show="selectTrainImg!=null">
       <div class="cut w-100" id="cut" style="margin: 10px">

@@ -10,7 +10,7 @@ import {
   saveSelectTrainImgToDB,
   saveDataToConceptToDB,
   userTags,
-  downloadMultipleFilesAsZip,
+  downloadMultipleFilesAsZip, trainHash, deleteDBItemByKey, saveTrainImgToDB, concept,
 } from "../main.ts";
 import SelectedImgComponent from "../components/SelectedImgComponent.vue";
 import {ImageDB} from "../types/ImageDB.ts";
@@ -19,7 +19,7 @@ import {TrainImage} from "../types/TrainImage.ts";
 import {Tag} from "../types/Tag.ts";
 
 const userInput = ref<string>('');
-const currentTab = ref<string>("打标签");
+const currentTab = ref<string>("标签");
 const tagRecommend = ref<string[]>([]);
 
 onMounted(async () => {
@@ -78,66 +78,31 @@ async function selectTag(tag: string, flag: boolean) {
           selectTrainImg.value.tags.push(tag)
           await saveSelectTrainImgToDB();
         } else if (foundElement) {
-          const temps = [];
-          for (const item of selectTrainImg.value.tags) {
-            temps.push(item);
-          }
-          selectTrainImg.value.tags = [];
-          for (const item of temps) {
-            if (tag != item)
-              selectTrainImg.value.tags.push(item)
-          }
+          selectTrainImg.value.tags = selectTrainImg.value.tags.filter(element => element !== tag);
           await saveSelectTrainImgToDB();
         }
       }
     }
   } else {
-    // await deleteTag(tag);
+    await deleteTag(tag);
   }
 }
 
-// async function deleteSelectTag(tag: any) {
-//   console.log(tag);
-//   // if (selectImg.value.url !== '') {
-//   //   selectImg.value.tags = selectImg.value.tags.filter(element => element.tag !== tag.tag);
-//   //   await updateConceptItem('train_images', selectImg.value.name, 'tags', JSON.stringify(selectImg.value.tags));
-//   //   for (let i = 0; i < allTaggers.value.length; i++) {
-//   //     if (allTaggers.value[i].tag === tag.tag) {
-//   //       allTaggers.value[i].color = 'text-bg-secondary';
-//   //       allTaggers.value[i].used--;
-//   //       await updateConceptItem('user_tags', tag.tag, 'used', allTaggers.value[i].used);
-//   //       break;
-//   //     }
-//   //   }
-//   //   for (let i = 0; i < selectImg.value.projectTag.length; i++) {
-//   //     if (selectImg.value.projectTag[i].tag === tag.tag) {
-//   //       selectImg.value.projectTag[i].color = 'text-bg-secondary';
-//   //       break;
-//   //     }
-//   //   }
-//   // }
-// }
+async function deleteTag(tag: string) {
+  for (const images of Object.values(trainHash)) {
+    const lb = images.tags.length;
+    images.tags = images.tags.filter(element => element !== tag);
+    const la = images.tags.length;
+    if (la != lb) {
+      await saveTrainImgToDB(images);
+    }
+  }
+  if (userTags) {
+    userTags.value = userTags.value.filter(element => element.name !== tag);
+    await deleteDBItemByKey(concept.value, 'train_images', tag);
+  }
+}
 
-// async function deleteTag(tag: any) {
-//   // TODO推测类型
-//   for (const images of allImages.value) {
-//     images.tags = images.tags.filter(element => element.tag !== tag.tag);
-//   }
-//   if (allTaggers) {
-//     allTaggers.value = allTaggers.value.filter(element => element.tag !== tag.tag);
-//     await deleteConceptItem('user_tags', tag.name)
-//     await updateConceptItem('train_images', selectImg.value.name, 'tags', JSON.stringify(selectImg.value.tags));
-//   }
-// }
-
-// function createTags(strArray: string[]): Tag[] {
-//   let result: Tag[] = [];
-//   for (const strArrayElement of strArray) {
-//     // TODO 推测strArrayElement类型
-//     result.push(new Tag("archdaily", strArrayElement, 'text-bg-secondary', "archdaily"))
-//   }
-//   return result;
-// }
 function isTagSelect(tag: string): boolean {
   if (selectTrainImg.value) {
     for (const img of selectTrainImg.value.tags) {
@@ -185,7 +150,7 @@ function exportTrainData() {
   <NavigationComponent id="navigationComponent" :activate-tab="currentTab"/>
   <div class="row" style="width: 100%">
     <div class="col-4" style="height: 100%;overflow-y:auto">
-      <SelectedImgComponent :delete-able="false"/>
+      <SelectedImgComponent :delete-able="false" :is-header="false"/>
     </div>
     <div class=" col-8">
       <div class="py-3">

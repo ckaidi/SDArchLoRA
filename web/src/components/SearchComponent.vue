@@ -137,6 +137,26 @@ function mouseover(item: ImageItem) {
 function mouseleave(item: ImageItem) {
   item.show = false
 }
+
+function getColor(item: ImageItem) {
+  const n = parseInt(item.document_id);
+  const i = n % 7;
+  if (i == 0) {
+    return 'border-primary';
+  } else if (i == 1) {
+    return 'border-secondary';
+  } else if (i == 2) {
+    return 'border-success';
+  } else if (i == 3) {
+    return 'border-danger';
+  } else if (i == 4) {
+    return 'border-warning';
+  } else if (i == 5) {
+    return 'border-info';
+  }
+  return 'border-dark';
+}
+
 </script>
 
 <template>
@@ -162,7 +182,7 @@ function mouseleave(item: ImageItem) {
         <div v-show="!item.isInTrain" @mouseover="mouseover(item)" @mouseleave="mouseleave(item)"
              class="bg-gray-900 rounded-lg shadow-md overflow-hidden transition-all
             duration-300 ease-linear hover:shadow-lg hover:shadow-gray-600 group">
-          <div class="card">
+          <div class="card border-0" :class="getColor(item)">
             <div class="position-absolute top-0 left-0 d-flex justify-content-center align-items-center
                  w-100 h-100 text-white fs-5 bg-body-secondary opacity-75"
                  :class="{'cardButtonShow':item.show,'cardButtonHide':!item.show}">
@@ -174,6 +194,9 @@ function mouseleave(item: ImageItem) {
               </a>
             </div>
             <img :src=url :alt="item.name" class="card-img-top">
+            <!--<div class="card-body">-->
+            <!--<p class="card-text">{{ getProjectDescription(item) }}</p>-->
+            <!--</div>-->
           </div>
         </div>
       </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
-  deleteDBItemByKey, emitter, getConcept,
+  concept,
+  deleteDBItemByKey, emitter,
   getDataInDBByKey,
   keyword, resizeTrainImgSpace,
   saveDataToConceptToDB,
@@ -19,6 +20,10 @@ onMounted(() => {
 
 const props = defineProps({
   deleteAble: {
+    type: Boolean,
+    default: true,
+  },
+  isHeader: {
     type: Boolean,
     default: true,
   }
@@ -58,8 +63,7 @@ async function deleteTrainImg(item: TrainImage) {
     delete trainHash[item.url];
     const imageDB = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', item.url);
     if (imageDB) {
-      const concept = await getConcept();
-      await deleteDBItemByKey(concept, 'train_images', item.name);
+      await deleteDBItemByKey(concept.value, 'train_images', item.name);
       showSearchImages.value[item.url] = new ImageItem([item.keyword],
           item.name, imageDB.document_id, item.url, item.indexInSearch);
     }
@@ -90,7 +94,9 @@ function itemShow(item: TrainImage) {
 <template>
   <div class="container-fluid mt-2 mb-2 row p-0 m-0" id="trainImgContainer">
     <div class="p-0">
-      <button :disabled="true" type="button" class="btn btn-primary w-100" @click="search">训练图片</button>
+      <button v-show="isHeader" :disabled="true" type="button" class="btn btn-primary w-100" @click="search">
+        训练图片{{ Object.values(trainHash).length }}张
+      </button>
       <div v-for="item in trainHash" class="card mt-1 mb-1" @mouseover="mouseover(item)" @mouseleave="mouseleave(item)"
            @click="imgClick(item)"
            :class="{'border-primary':item.isSelected,'border-3':item.isSelected}">
