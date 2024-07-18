@@ -398,3 +398,5 @@ FodyWeavers.xsd
 *.sln.iml
 /SpiderGo.exe
 /web/public/SpiderGo.exe
+SpiderGo
+/SpiderGo
