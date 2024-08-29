@@ -114,11 +114,14 @@ func GetArchdailyImagesRoute(w http.ResponseWriter, r *http.Request) {
 		err = conn.Close()
 		handle(err)
 	}(conn)
-	getImagesUrl(r, conn, keyword, page)
+	allCount := 0
+	startProjectCount, err := strconv.Atoi(r.URL.Query().Get("projectCount"))
+	handle(err)
+	getImagesUrl(r, conn, keyword, page, startProjectCount, &allCount)
 	handle(err)
 }
 
-func getImagesUrl(r *http.Request, conn *websocket.Conn, key string, page int) {
+func getImagesUrl(r *http.Request, conn *websocket.Conn, key string, page int, startProjectCount int, allCount *int) {
 	Get(getSearchUrl(key, page), func(response *http.Response) {
 		defer func(Body io.ReadCloser) {
 			err := Body.Close()
@@ -131,22 +134,19 @@ func getImagesUrl(r *http.Request, conn *websocket.Conn, key string, page int) {
 		err = json.Unmarshal([]byte(text), &searchResult)
 		handle(err)
 
-		startProjectCount, err := strconv.Atoi(r.URL.Query().Get("projectCount"))
-		handle(err)
-		allCount := 0
 		// 将 HTTP 连接升级为 WebSocket 连接
 		for index, project := range searchResult.Results {
 			if index <= startProjectCount {
 				continue
 			}
-			if allCount > 50 {
+			if *allCount > 50 {
 				return
 			}
 			green := color.New(color.FgGreen).PrintlnFunc()
 			green("[项目:]" + project.MetaDescription)
-			analyseProject(conn, project, page, index, &allCount)
+			analyseProject(conn, project, page, index, allCount)
 		}
-		getImagesUrl(r, conn, key, page+1)
+		getImagesUrl(r, conn, key, page+1, -1, allCount)
 	})
 }
 
