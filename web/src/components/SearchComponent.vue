@@ -34,6 +34,7 @@ const currentSelectUrl = ref("");
 const options = ref<WaterOptions>(new WaterOptions());
 const currentPage = ref<number>(1);
 const pages = ref<number[]>([1, 2, 3]);
+const inputJumpPage = ref<number>(1);
 const route = useRoute();
 
 onMounted(async () => {
@@ -197,9 +198,6 @@ function getColor(item: ImageItem) {
               </a>
             </div>
             <img :src=url :alt="item.name" class="card-img-top">
-            <!--<div class="card-body">-->
-            <!--<p class="card-text">{{ getProjectDescription(item) }}</p>-->
-            <!--</div>-->
           </div>
         </div>
       </template>
@@ -211,6 +209,12 @@ function getColor(item: ImageItem) {
         </li>
         <li class="page-item" v-for="page in pages">
           <button class="page-link" :class="{active:currentPage==page}" @click="readPage(page)">{{ page }}</button>
+        </li>
+        <li class="page-item">
+          <input class="page-link" type="number" style="width: 100px" v-model="inputJumpPage"/>
+        </li>
+        <li class="page-item">
+          <button class="page-link" @click="readPage(inputJumpPage)">跳转</button>
         </li>
         <li class="page-item">
           <button class="page-link" @click="readPage(currentPage+1)">下一页</button>
