@@ -14,7 +14,7 @@ import {
   getDataInDBByKey,
   saveProjectInfoToDB,
   saveDataToConceptToDB,
-  loadFirstDataOrNullFromDB,
+  loadFirstDataOrNullFromDB, currentSearchPage,
 } from "../main.ts";
 import {onMounted, reactive, ref} from "vue";
 import {Waterfall} from "vue-waterfall-plugin-next";
@@ -56,33 +56,37 @@ async function putInTrain(item: ImageItem) {
   }
 }
 
-// 接收到新图片到处理函数
+/**
+ * 接收到新图片到处理函数
+ * @param imageText websocket接收到的字符串
+ */
 async function addImages(imageText: string) {
   try {
-    const jsonData = JSON.parse(imageText);
-    if ("document_type" in jsonData) {
-      // 保存项目信息
-      await saveProjectInfoToDB(new ProjectDB(jsonData.document_id, jsonData.CreateAt, jsonData.UpdateAt, jsonData.author, jsonData.bim,
-          jsonData.categories, jsonData.document_type, jsonData.location, jsonData.meta_description, jsonData.offices,
-          jsonData.photographers, jsonData.tags, jsonData.title, jsonData.url, jsonData.year));
+    if (imageText == "end") {
+      const pageData: PageDataDB[] = [];
+      const lastPageData = new PageDataDB(currentSearchPage.value);
+      for (const key in showSearchImages.value) {
+        const imageItem = showSearchImages.value[key];
+        lastPageData.images.push(new PageImageDB(imageItem.src));
+      }
+      pageData.push(lastPageData);
+      await saveNewPage(pageData, currentSearchPage.value);
     } else {
-      // 保存图片信息
-      await saveImageToDB(new ImageDB(jsonData.url, jsonData.name, jsonData.document_id));
-      showSearchImages.value[jsonData.url] = new ImageItem(
-          [sessionStorage.getItem('keyword') as string],
-          jsonData.name,
-          jsonData.document_id,
-          jsonData.url,
-          Object.keys(showSearchImages.value).length);
-      if (jsonData['is_last']) {
-        const pageData: PageDataDB[] = [];
-        const lastPageData = new PageDataDB(1);
-        for (const key in showSearchImages.value) {
-          const imageItem = showSearchImages.value[key];
-          lastPageData.images.push(new PageImageDB(imageItem.src));
-        }
-        pageData.push(lastPageData);
-        await saveNewPage(pageData, jsonData['page'], jsonData['project']);
+      const jsonData = JSON.parse(imageText);
+      if ("document_type" in jsonData) {
+        // 保存项目信息
+        await saveProjectInfoToDB(new ProjectDB(jsonData.document_id, jsonData.CreateAt, jsonData.UpdateAt, jsonData.author, jsonData.bim,
+            jsonData.categories, jsonData.document_type, jsonData.location, jsonData.meta_description, jsonData.offices,
+            jsonData.photographers, jsonData.tags, jsonData.title, jsonData.url, jsonData.year));
+      } else {
+        // 保存图片信息
+        await saveImageToDB(new ImageDB(jsonData.url, jsonData.name, jsonData.document_id));
+        showSearchImages.value[jsonData.url] = new ImageItem(
+            [sessionStorage.getItem('keyword') as string],
+            jsonData.name,
+            jsonData.document_id,
+            jsonData.url,
+            Object.keys(showSearchImages.value).length);
       }
     }
   } catch (e) {

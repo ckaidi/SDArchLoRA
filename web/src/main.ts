@@ -40,7 +40,7 @@ export const spiderServer = '127.0.0.1:8081'
 export const selectModalOpenEvent = 'selectModalOpenEvent'
 export const conceptModalOpenEvent = 'conceptModalOpenEvent'
 export const conceptModalCloseEvent = 'conceptModalCloseEvent'
-
+export const currentSearchPage = ref<number>(1);
 export const keyword = ref("");
 export const initFinish = ref(false);
 export const concept = ref<string>('default');
@@ -110,7 +110,9 @@ export function resizeCutterSpace() {
     }
 }
 
-// 插入概念数据库和项目数据库以及图片数据库
+/**
+ * 插入概念数据库和项目数据库以及图片数据库
+ */
 async function initDataBase() {
     await openDataBase('spiders', (db_temp) => {
         // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
@@ -142,7 +144,9 @@ async function initDataBase() {
     concept.value = 'default';
 }
 
-// 所有方法都从这打开数据库
+/**
+ * 所有方法都从这打开数据库
+ */
 function openDataBase(dbname: string, createTable: (args: IDBDatabase) => void): Promise<IDBDatabase> {
     return new Promise(async (resolve, reject) => {
         const request = indexedDB.open(dbname);
@@ -167,7 +171,13 @@ function openDataBase(dbname: string, createTable: (args: IDBDatabase) => void):
     });
 }
 
-// 检查所给的的数据是否在数据库中
+/**
+ * 检查所给的的数据是否在数据库中
+ * @param dbName 数据库名称
+ * @param storeName 表名
+ * @param keyPath 键路径（包含Index）
+ * @param indexValue 索引值
+ */
 export async function checkDataInDB(dbName: string, storeName: string, keyPath: string, indexValue: any): Promise<boolean> {
     const obj = await getDataInDBByKey<object>(dbName, storeName, keyPath, indexValue);
     return obj != null;
@@ -212,7 +222,10 @@ export async function getDataInDBByKey<T>(dbName: string, tableName: string, key
     });
 }
 
-// 保存概念到数据库
+/**
+ * 保存概念到数据库
+ * @param key 概念数据
+ */
 export async function saveConceptToDB(key: ConceptDB) {
     try {
         const db = await openDataBase('spiders', (db_temp) => {
@@ -254,7 +267,11 @@ export async function saveConceptToDB(key: ConceptDB) {
     }
 }
 
-// 添加训练概念
+/**
+ * 添加训练概念
+ * @param concept 训练概念
+ * @param isModelOpen 是否打开模特对话框
+ */
 export async function addConcept(concept: string, isModelOpen: boolean = true) {
     const isExist = await checkDataInDB("spiders", "concepts", "nameIndex", concept);
     if (isExist || concept === '') {
@@ -299,13 +316,12 @@ export async function saveDataToConceptToDB(tableName: string, buffer: object) {
     }
 }
 
-export async function saveNewPage(data: PageDataDB[], page: number, project: number) {
+export async function saveNewPage(data: PageDataDB[], page: number) {
     const key = sessionStorage.getItem('keyword');
     if (!key) return;
     const searchData = await loadSingleDataFromDB<SearchDB>('spiders', "searches", "keyword", key)
     if (searchData) {
         searchData.page_count = page;
-        searchData.project_count = project;
         searchData.date = Date.now();
         for (const item of data) {
             // 添加新的page data
@@ -316,10 +332,15 @@ export async function saveNewPage(data: PageDataDB[], page: number, project: num
     }
 }
 
-// 向后端发送请求，爬取archidaily
+/**
+ * 向后端发送请求，爬取archidaily
+ * @param keyword 搜索的关键字
+ * @param onReceiveImg 接受图片的委托
+ */
 export function searchArchDaily(keyword: string, onReceiveImg: (arg: string) => void) {
     // 创建一个 WebSocket 对象，连接到本地的 8080 端口
     if (keyword !== "") {
+        currentSearchPage.value = 1
         const ws = new WebSocket("ws://" + spiderServer + "/archdaily?keyword=" + keyword + "&page=1&projectCount=-1");
         searchCore(ws, onReceiveImg);
     }

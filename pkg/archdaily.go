@@ -40,7 +40,6 @@ type ImageDetail struct {
 	DocumentId string `json:"document_id"`
 	Page       int    `json:"page"`
 	Project    int    `json:"project"`
-	IsLast     bool   `json:"is_last"`
 }
 
 // ImageGroup json模型兼数据模型
@@ -99,11 +98,6 @@ func getSearchUrl(key string, page int) string {
 }
 
 func GetArchdailyImagesRoute(w http.ResponseWriter, r *http.Request) {
-	//// 检查请求方法是否为 POST
-	//if r.Method != "POST" {
-	//	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-	//	return
-	//}
 	keyword := r.URL.Query().Get("keyword")
 	pageString := r.URL.Query().Get("page")
 	page, err := strconv.Atoi(pageString)
@@ -114,14 +108,11 @@ func GetArchdailyImagesRoute(w http.ResponseWriter, r *http.Request) {
 		err = conn.Close()
 		handle(err)
 	}(conn)
-	allCount := 0
-	startProjectCount, err := strconv.Atoi(r.URL.Query().Get("projectCount"))
-	handle(err)
-	getImagesUrl(r, conn, keyword, page, startProjectCount, &allCount)
-	handle(err)
+	getImagesUrl(conn, keyword, page)
+	handle(conn.WriteMessage(websocket.TextMessage, []byte("end")))
 }
 
-func getImagesUrl(r *http.Request, conn *websocket.Conn, key string, page int, startProjectCount int, allCount *int) {
+func getImagesUrl(conn *websocket.Conn, key string, page int) {
 	Get(getSearchUrl(key, page), func(response *http.Response) {
 		defer func(Body io.ReadCloser) {
 			err := Body.Close()
@@ -136,21 +127,14 @@ func getImagesUrl(r *http.Request, conn *websocket.Conn, key string, page int, s
 
 		// 将 HTTP 连接升级为 WebSocket 连接
 		for index, project := range searchResult.Results {
-			if index <= startProjectCount {
-				continue
-			}
-			if *allCount > 50 {
-				return
-			}
 			green := color.New(color.FgGreen).PrintlnFunc()
 			green("[项目:]" + project.MetaDescription)
-			analyseProject(conn, project, page, index, allCount)
+			analyseProject(conn, project, page, index)
 		}
-		getImagesUrl(r, conn, key, page+1, -1, allCount)
 	})
 }
 
-func analyseProject(conn *websocket.Conn, project ResultDetail, page int, index int, allCount *int) {
+func analyseProject(conn *websocket.Conn, project ResultDetail, page int, index int) {
 	dbModel := AddProjectToDatabase(project)
 	if dbModel != nil {
 		err := conn.WriteJSON(dbModel)
@@ -169,23 +153,19 @@ func analyseProject(conn *websocket.Conn, project ResultDetail, page int, index 
 		images := reader.Find("img.gallery-thumbs-img")
 		green := color.New(color.FgGreen).PrintlnFunc()
 		green("找到" + strconv.Itoa(images.Length()) + "张图片")
-		imagesLength := images.Length() - 1
 		images.Each(func(i int, selection *goquery.Selection) {
 			imageUrl := selection.AttrOr("src", "")
 			title := selection.AttrOr("alt", "标题")
 			if imageUrl != "" {
 				formattedNum := fmt.Sprintf("%03d", i)
 				green("[图片" + formattedNum + ":]" + title)
-				*allCount += 1
-				err = conn.WriteJSON(ImageDetail{
+				handle(conn.WriteJSON(ImageDetail{
 					Name:       title,
 					Url:        imageUrl,
 					DocumentId: project.DocumentId,
 					Page:       page,
 					Project:    index,
-					IsLast:     *allCount >= 50 && i == imagesLength,
-				})
-				handle(err)
+				}))
 			}
 		})
 	})
