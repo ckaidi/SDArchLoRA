@@ -556,7 +556,7 @@ export function loadFirstDataOrNullFromDB<T>(dbname: string, tableName: string):
 /**
  * 下载图片url
  */
-export async function downloadUrl(imageUrl: string) {
+export async function downloadUrl(imageUrl: string, filename: string) {
     return fetch("http://" + spiderServer + "/download?url=" + imageUrl.replace('medium_jpg', 'large_jpg'))
         .then(response => response.blob()) // 将响应转换为 Blob
         .then(blob => {
@@ -566,13 +566,12 @@ export async function downloadUrl(imageUrl: string) {
             // 创建一个 <a> 元素，模拟点击以触发下载
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'downloaded-image.jpg'; // 设置下载的文件名
+            a.download = filename + '.jpg'; // 设置下载的文件名
             document.body.appendChild(a);
             a.click();
 
             // 移除临时的 <a> 元素
             document.body.removeChild(a);
-
             // 释放 Blob URL
             URL.revokeObjectURL(url);
         })

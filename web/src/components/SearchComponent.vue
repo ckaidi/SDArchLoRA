@@ -201,7 +201,7 @@ function getColor(item: ImageItem) {
               <a type="button" v-show="false" class="btn btn-secondary m-1" :href="seeBig(item,index)" target="_blank">
                 查看大图
               </a>
-              <button type="button" v-show="true" class="btn btn-secondary m-1" @click="downloadUrl(item.src)">
+              <button type="button" v-show="true" class="btn btn-secondary m-1" @click="downloadUrl(item.src,item.name)">
                 下载大图
               </button>
             </div>
