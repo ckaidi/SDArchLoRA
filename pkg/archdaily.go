@@ -121,6 +121,16 @@ func GetArchdailyImagesRoute(w http.ResponseWriter, r *http.Request) {
 	handle(err)
 }
 
+func Download(w http.ResponseWriter, r *http.Request) {
+	imageUrl := r.URL.Query().Get("url")
+	Get(imageUrl, func(response *http.Response) {
+		data, err := io.ReadAll(response.Body)
+		handle(err)
+		_, err = w.Write(data)
+		handle(err)
+	})
+}
+
 func getImagesUrl(r *http.Request, conn *websocket.Conn, key string, page int, startProjectCount int, allCount *int) {
 	Get(getSearchUrl(key, page), func(response *http.Response) {
 		defer func(Body io.ReadCloser) {

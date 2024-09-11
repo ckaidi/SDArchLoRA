@@ -14,7 +14,7 @@ import {
   getDataInDBByKey,
   saveProjectInfoToDB,
   saveDataToConceptToDB,
-  loadFirstDataOrNullFromDB,
+  loadFirstDataOrNullFromDB, downloadUrl,
 } from "../main.ts";
 import {onMounted, reactive, ref} from "vue";
 import {Waterfall} from "vue-waterfall-plugin-next";
@@ -128,6 +128,11 @@ async function readPage(pageNumber: number) {
   window.scrollTo(0, 0);
 }
 
+/**
+ * 查看指定图片的大图
+ * @param item 图片对象
+ * @param index 索引
+ */
 function seeBig(item: ImageItem, index: number) {
   sessionStorage.setItem('useless', index.toString());
   return item.src.replace('medium_jpg', 'large_jpg');
@@ -196,6 +201,9 @@ function getColor(item: ImageItem) {
               <a type="button" v-show="false" class="btn btn-secondary m-1" :href="seeBig(item,index)" target="_blank">
                 查看大图
               </a>
+              <button type="button" v-show="true" class="btn btn-secondary m-1" @click="downloadUrl(item.src)">
+                下载大图
+              </button>
             </div>
             <img :src=url :alt="item.name" class="card-img-top">
           </div>
