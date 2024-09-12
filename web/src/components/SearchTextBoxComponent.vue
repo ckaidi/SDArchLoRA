@@ -34,7 +34,7 @@ async function search() {
       const image = imageData[i];
       const imageDB = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', image.url_hash);
       if (imageDB) {
-        const imageJson = new ImageDetailJson(imageDB.title, imageDB.url, imageDB.document_id, searchDB.page_count, searchDB.project_count, i == imageData.length - 1);
+        const imageJson = new ImageDetailJson(imageDB.title, imageDB.url, imageDB.document_id, searchDB.page_count);
         props.onReceiveImg(JSON.stringify(imageJson));
       }
     }
