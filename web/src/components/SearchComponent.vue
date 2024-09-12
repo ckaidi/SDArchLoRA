@@ -57,6 +57,32 @@ async function putInTrain(item: ImageItem) {
 }
 
 /**
+ * 计算badge的颜色样式
+ * @param documentId
+ */
+function getBadgeStyle(documentId: string) {
+  const id = Number(documentId) % 7;
+  switch (id) {
+    case 0:
+      return "text-bg-primary"
+    case 1:
+      return "text-bg-secondary"
+    case 2:
+      return "text-bg-success"
+    case 3:
+      return "text-bg-danger"
+    case 4:
+      return "text-bg-warning"
+    case 5:
+      return "text-bg-info"
+    case 6:
+      return "text-bg-light"
+    case 7:
+      return "text-bg-dark"
+  }
+}
+
+/**
  * 接收到新图片到处理函数
  */
 async function addImages(imageText: string) {
@@ -80,13 +106,14 @@ async function addImages(imageText: string) {
             jsonData.photographers, jsonData.tags, jsonData.title, jsonData.url, jsonData.year));
       } else {
         // 保存图片信息
-        await saveImageToDB(new ImageDB(jsonData.url, jsonData.name, jsonData.document_id));
+        await saveImageToDB(new ImageDB(jsonData.url, jsonData.name, jsonData.document_id, jsonData.project_name));
         showSearchImages.value[jsonData.url] = new ImageItem(
             [sessionStorage.getItem('keyword') as string],
             jsonData.name,
             jsonData.document_id,
             jsonData.url,
-            Object.keys(showSearchImages.value).length);
+            Object.keys(showSearchImages.value).length,
+            jsonData.project_name);
       }
     }
   } catch (e) {
@@ -166,7 +193,7 @@ async function readImageInDB(pageNumber: number) {
     if (imageData) {
       if (!trainHash.value[imageData.url])
         showSearchImages.value[imageData.url] = new ImageItem([keyword.value], imageData.title,
-            imageData.document_id, imageData.url, Object.keys(showSearchImages.value).length);
+            imageData.document_id, imageData.url, Object.keys(showSearchImages.value).length, imageData.project_name);
     } else {
       console.error(item + "图片不存在");
     }
@@ -252,6 +279,9 @@ function getColor(item: ImageItem) {
               </button>
             </div>
             <img :src=url :alt="item.name" class="card-img-top">
+            <span class="badge" :class="getBadgeStyle(item.document_id)">{{
+                item.project_name
+              }}</span>
           </div>
         </div>
       </template>

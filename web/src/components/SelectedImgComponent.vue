@@ -64,7 +64,7 @@ async function deleteTrainImg(item: TrainImage) {
     if (imageDB) {
       await deleteDBItemByKey(concept.value, 'train_images', item.name);
       showSearchImages.value[item.url] = new ImageItem([item.keyword],
-          item.name, imageDB.document_id, item.url, item.indexInSearch);
+          item.name, imageDB.document_id, item.url, item.indexInSearch,imageDB.project_name);
     }
   }
 }

@@ -35,11 +35,12 @@ type NameUrl struct {
 
 type ImageDetail struct {
 	gorm.Model
-	Name       string `json:"name"`
-	Url        string `json:"url"`
-	DocumentId string `json:"document_id"`
-	Page       int    `json:"page"`
-	Project    int    `json:"project"`
+	Name        string `json:"name"`
+	Url         string `json:"url"`
+	DocumentId  string `json:"document_id"`
+	Page        int    `json:"page"`
+	Project     int    `json:"project"`
+	ProjectName string `json:"project_name"`
 }
 
 // ImageGroup json模型兼数据模型
@@ -194,11 +195,12 @@ func analyseProject(conn *websocket.Conn, project ResultDetail, page int, index 
 			formattedNum := fmt.Sprintf("%03d", i)
 			green("[图片" + formattedNum + ":]" + title)
 			err = conn.WriteJSON(ImageDetail{
-				Name:       title,
-				Url:        imageUrl,
-				DocumentId: project.DocumentId,
-				Page:       page,
-				Project:    index,
+				Name:        title,
+				Url:         imageUrl,
+				DocumentId:  project.DocumentId,
+				Page:        page,
+				Project:     index,
+				ProjectName: project.Title,
 			})
 			handle(err)
 		}
