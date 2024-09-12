@@ -27,11 +27,11 @@ type TrainStruct struct {
 
 var useProxy = false
 
-func Get(webUrl string, callback func(*http.Response)) {
-	fetch(webUrl, "GET", callback)
+func Get(webUrl string) *http.Response {
+	return fetch(webUrl, "GET")
 }
 
-func fetch(webUrl string, method string, callback func(*http.Response)) {
+func fetch(webUrl string, method string) *http.Response {
 	for {
 		var client *http.Client
 		client = &http.Client{}
@@ -51,8 +51,7 @@ func fetch(webUrl string, method string, callback func(*http.Response)) {
 			time.Sleep(a)
 			continue
 		}
-		callback(response)
-		return
+		return response
 	}
 }
 

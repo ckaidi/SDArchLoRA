@@ -110,7 +110,9 @@ export function resizeCutterSpace() {
     }
 }
 
-// 插入概念数据库和项目数据库以及图片数据库
+/**
+ * 插入概念数据库和项目数据库以及图片数据库
+ */
 async function initDataBase() {
     await openDataBase('spiders', (db_temp) => {
         // 检车是否已存在名为images的对象存储空间，如果不存在，则创建它
@@ -142,7 +144,9 @@ async function initDataBase() {
     concept.value = 'default';
 }
 
-// 所有方法都从这打开数据库
+/**
+ * 所有方法都从这打开数据库
+ */
 function openDataBase(dbname: string, createTable: (args: IDBDatabase) => void): Promise<IDBDatabase> {
     return new Promise(async (resolve, reject) => {
         const request = indexedDB.open(dbname);
@@ -167,7 +171,9 @@ function openDataBase(dbname: string, createTable: (args: IDBDatabase) => void):
     });
 }
 
-// 检查所给的的数据是否在数据库中
+/**
+ * 检查所给的的数据是否在数据库中
+ */
 export async function checkDataInDB(dbName: string, storeName: string, keyPath: string, indexValue: any): Promise<boolean> {
     const obj = await getDataInDBByKey<object>(dbName, storeName, keyPath, indexValue);
     return obj != null;
@@ -212,7 +218,9 @@ export async function getDataInDBByKey<T>(dbName: string, tableName: string, key
     });
 }
 
-// 保存概念到数据库
+/**
+ * 保存概念到数据库
+ */
 export async function saveConceptToDB(key: ConceptDB) {
     try {
         const db = await openDataBase('spiders', (db_temp) => {
@@ -254,7 +262,9 @@ export async function saveConceptToDB(key: ConceptDB) {
     }
 }
 
-// 添加训练概念
+/**
+ * 添加训练概念
+ */
 export async function addConcept(concept: string, isModelOpen: boolean = true) {
     const isExist = await checkDataInDB("spiders", "concepts", "nameIndex", concept);
     if (isExist || concept === '') {
@@ -269,8 +279,9 @@ export async function addConcept(concept: string, isModelOpen: boolean = true) {
     }
 }
 
-
-// 保存数据到概念数据库
+/**
+ * 保存数据到概念数据库
+ */
 export async function saveDataToConceptToDB(tableName: string, buffer: object) {
     if (!concept.value) return;
     const db = await openDataBase(concept.value, (_) => {
@@ -299,13 +310,17 @@ export async function saveDataToConceptToDB(tableName: string, buffer: object) {
     }
 }
 
-export async function saveNewPage(data: PageDataDB[], page: number, project: number) {
+/**
+ * 保存新的页面数据
+ * @param data 页面数据
+ * @param page 页面数值
+ */
+export async function saveNewPage(data: PageDataDB[], page: number) {
     const key = sessionStorage.getItem('keyword');
     if (!key) return;
     const searchData = await loadSingleDataFromDB<SearchDB>('spiders', "searches", "keyword", key)
     if (searchData) {
         searchData.page_count = page;
-        searchData.project_count = project;
         searchData.date = Date.now();
         for (const item of data) {
             // 添加新的page data
@@ -316,7 +331,11 @@ export async function saveNewPage(data: PageDataDB[], page: number, project: num
     }
 }
 
-// 向后端发送请求，爬取archidaily
+/**
+ * 向后端发送请求，爬取archidaily
+ * @param keyword 搜索关键字
+ * @param onReceiveImg 接受图片委托
+ */
 export function searchArchDaily(keyword: string, onReceiveImg: (arg: string) => void) {
     // 创建一个 WebSocket 对象，连接到本地的 8080 端口
     if (keyword !== "") {
@@ -325,7 +344,11 @@ export function searchArchDaily(keyword: string, onReceiveImg: (arg: string) => 
     }
 }
 
-// 保存图片到page data里
+/**
+ * 保存图片到page data里
+ * @param ws websocket长连接
+ * @param onReceiveImg 接受图片委托
+ */
 function searchCore(ws: WebSocket, onReceiveImg: (arg: string) => void) {
     searchImageCount = 0;
     // 注册 onopen 事件的回调函数
@@ -556,8 +579,8 @@ export function loadFirstDataOrNullFromDB<T>(dbname: string, tableName: string):
 /**
  * 下载图片url
  */
-export async function downloadUrl(imageUrl: string, filename: string) {
-    return fetch("http://" + spiderServer + "/download?url=" + imageUrl.replace('medium_jpg', 'large_jpg'))
+export async function downloadUrl(image: ImageItem) {
+    return fetch("http://" + spiderServer + "/download?url=" + image.src.replace('medium_jpg', 'large_jpg'))
         .then(response => response.blob()) // 将响应转换为 Blob
         .then(blob => {
             // 创建一个临时的 URL 指向 Blob
@@ -566,7 +589,11 @@ export async function downloadUrl(imageUrl: string, filename: string) {
             // 创建一个 <a> 元素，模拟点击以触发下载
             const a = document.createElement('a');
             a.href = url;
-            a.download = filename + '.jpg'; // 设置下载的文件名
+            let imageName: string = image.name;
+            if (image.name == "" || image.name == null) {
+                imageName = image.src + ".jpg"
+            }
+            a.download = imageName + '.jpg'; // 设置下载的文件名
             document.body.appendChild(a);
             a.click();
 
@@ -654,7 +681,10 @@ export async function saveProjectInfoToDB(project: ProjectDB) {
     await saveDataToGlobalDB("projects", project);
 }
 
-// 保存图片到数据库
+/**
+ * 保存图片到数据库
+ * @param image 保存图片(ImageDB)到数据库
+ */
 export async function saveImageToDB(image: ImageDB) {
     await saveDataToGlobalDB("images", image);
 }
@@ -666,15 +696,13 @@ export async function saveImageToDB(image: ImageDB) {
  * @param onReceiveImg 接受图片的委托
  */
 export async function continueSearchArchDaily(keyword: string, onReceiveImg: (arg: string) => void) {
-    // 创建一个 WebSocket 对象，连接到本地的 8080 端口
     if (keyword !== "") {
         const searchesKeywords = await loadSingleDataFromDB<SearchDB>('spiders', 'searches', 'keyword', keyword);
         if (searchesKeywords === null) {
             return;
         }
-        const count = searchesKeywords.project_count;
         const page = searchesKeywords.page_count;
-        const ws = new WebSocket("ws://" + spiderServer + "/archdaily?" + "keyword=" + keyword + "&page=" + page + "&projectCount=" + count);
+        const ws = new WebSocket("ws://" + spiderServer + "/archdaily?" + "keyword=" + keyword + "&page=" + page);
         searchCore(ws, onReceiveImg);
     }
 }
@@ -688,7 +716,7 @@ export async function continueSearchArchDaily(keyword: string, onReceiveImg: (ar
 export async function readSearchesDB(keyword: string, page: number, addImages: (arg: string) => void): Promise<PageImageDB[]> {
     const searchDB = await loadSingleDataFromDB<SearchDB>('spiders', 'searches', 'keyword', keyword);
     if (!searchDB) return [];
-    if (searchDB.pages_data.length >= page) {
+    if (searchDB.pages_data.length >= page && searchDB.pages_data[page - 1].images.length > 0) {
         return searchDB.pages_data[page - 1].images;
     }
     await continueSearchArchDaily(keyword, addImages);

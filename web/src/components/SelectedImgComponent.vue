@@ -58,7 +58,7 @@ function mouseleave(item: TrainImage) {
  * @param item 需要删除的训练图片
  */
 async function deleteTrainImg(item: TrainImage) {
-  if (item.url in trainHash) {
+  if (item.url in trainHash.value) {
     delete trainHash.value[item.url];
     const imageDB = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', item.url);
     if (imageDB) {

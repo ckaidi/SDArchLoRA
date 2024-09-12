@@ -14,7 +14,7 @@ import {
   getDataInDBByKey,
   saveProjectInfoToDB,
   saveDataToConceptToDB,
-  loadFirstDataOrNullFromDB, downloadUrl,
+  loadFirstDataOrNullFromDB, downloadUrl, loadSingleDataFromDB,
 } from "../main.ts";
 import {onMounted, reactive, ref} from "vue";
 import {Waterfall} from "vue-waterfall-plugin-next";
@@ -56,33 +56,37 @@ async function putInTrain(item: ImageItem) {
   }
 }
 
-// 接收到新图片到处理函数
+/**
+ * 接收到新图片到处理函数
+ */
 async function addImages(imageText: string) {
   try {
-    const jsonData = JSON.parse(imageText);
-    if ("document_type" in jsonData) {
-      // 保存项目信息
-      await saveProjectInfoToDB(new ProjectDB(jsonData.document_id, jsonData.CreateAt, jsonData.UpdateAt, jsonData.author, jsonData.bim,
-          jsonData.categories, jsonData.document_type, jsonData.location, jsonData.meta_description, jsonData.offices,
-          jsonData.photographers, jsonData.tags, jsonData.title, jsonData.url, jsonData.year));
+    if (imageText.includes("end,")) {
+      const pageData: PageDataDB[] = [];
+      const page = Number(imageText.split(',')[1])
+      const lastPageData = new PageDataDB(page);
+      for (const key in showSearchImages.value) {
+        const imageItem = showSearchImages.value[key];
+        lastPageData.images.push(new PageImageDB(imageItem.src));
+      }
+      pageData.push(lastPageData);
+      await saveNewPage(pageData, page + 1);
     } else {
-      // 保存图片信息
-      await saveImageToDB(new ImageDB(jsonData.url, jsonData.name, jsonData.document_id));
-      showSearchImages.value[jsonData.url] = new ImageItem(
-          [sessionStorage.getItem('keyword') as string],
-          jsonData.name,
-          jsonData.document_id,
-          jsonData.url,
-          Object.keys(showSearchImages.value).length);
-      if (jsonData['is_last']) {
-        const pageData: PageDataDB[] = [];
-        const lastPageData = new PageDataDB(1);
-        for (const key in showSearchImages.value) {
-          const imageItem = showSearchImages.value[key];
-          lastPageData.images.push(new PageImageDB(imageItem.src));
-        }
-        pageData.push(lastPageData);
-        await saveNewPage(pageData, jsonData['page'], jsonData['project']);
+      const jsonData = JSON.parse(imageText);
+      if ("document_type" in jsonData) {
+        // 保存项目信息
+        await saveProjectInfoToDB(new ProjectDB(jsonData.document_id, jsonData.CreateAt, jsonData.UpdateAt, jsonData.author, jsonData.bim,
+            jsonData.categories, jsonData.document_type, jsonData.location, jsonData.meta_description, jsonData.offices,
+            jsonData.photographers, jsonData.tags, jsonData.title, jsonData.url, jsonData.year));
+      } else {
+        // 保存图片信息
+        await saveImageToDB(new ImageDB(jsonData.url, jsonData.name, jsonData.document_id));
+        showSearchImages.value[jsonData.url] = new ImageItem(
+            [sessionStorage.getItem('keyword') as string],
+            jsonData.name,
+            jsonData.document_id,
+            jsonData.url,
+            Object.keys(showSearchImages.value).length);
       }
     }
   } catch (e) {
@@ -90,30 +94,72 @@ async function addImages(imageText: string) {
   }
 }
 
+/**
+ * 跳转到指定页面
+ * @param pageNumber 页面
+ */
+async function jumpPage(pageNumber: number) {
+  const keyword = sessionStorage.getItem("keyword");
+  if (keyword) {
+    let searchDB = await loadSingleDataFromDB<SearchDB>("spiders", "searches", "keyword", keyword);
+    if (searchDB) {
+      if (pageNumber <= searchDB.pages_data.length) {
+        await readImageInDB(pageNumber);
+        currentPage.value = pageNumber;
+      } else if (pageNumber == searchDB.pages_data.length + 1) {
+        await readPage(pageNumber);
+        currentPage.value = pageNumber;
+      } else {
+        alert("请直接点击页面")
+      }
+    } else {
+      alert("请直接点击页面")
+    }
+  } else {
+    alert("请输入搜索关键字")
+  }
+}
+
+/**
+ * 读取指定页面
+ * @param pageNumber 页面
+ */
 async function readPage(pageNumber: number) {
   while (!initFinish.value) {
     await sleep(100);
   }
   if (pageNumber != 1 && pages.value.length >= 3) {
-    if (pageNumber == pages.value[0] || pageNumber == pages.value[pages.value.length - 1]) {
-      pages.value = [pageNumber - 1, pageNumber, pageNumber + 1];
-    }
+    pages.value = [pageNumber - 1, pageNumber, pageNumber + 1];
   }
-  showSearchImages.value = reactive({});
   const temp = sessionStorage.getItem("keyword");
-  let data: PageImageDB[] = [];
   currentPage.value = pageNumber;
   if (temp) {
     keyword.value = temp;
-    data = await readSearchesDB(temp, pageNumber, addImages);
   } else {
     const searchDB = await loadFirstDataOrNullFromDB<SearchDB>('spiders', 'searches');
     if (searchDB) {
       keyword.value = searchDB.keyword;
       sessionStorage.setItem('keyword', keyword.value);
       emitter.emit('keywordChangedEvent', keyword.value);
-      data = await readSearchesDB(keyword.value, pageNumber, addImages);
     }
+  }
+  await readImageInDB(pageNumber);
+}
+
+/**
+ * 读取数据库中的页面数据
+ * @param pageNumber 页面
+ */
+async function readImageInDB(pageNumber: number) {
+  window.scrollTo(0, 0);
+  if (pageNumber == 1)
+    pages.value = [1, 2];
+  else
+    pages.value = [pageNumber - 1, pageNumber, pageNumber + 1];
+  showSearchImages.value = reactive({});
+  let data: PageImageDB[] = [];
+  if (keyword.value) {
+    data = await readSearchesDB(keyword.value, pageNumber, addImages);
   }
   for (const item of data) {
     const imageData = await getDataInDBByKey<ImageDB>('spiders', 'images', 'urlIndex', item.url_hash);
@@ -125,7 +171,6 @@ async function readPage(pageNumber: number) {
       console.error(item + "图片不存在");
     }
   }
-  window.scrollTo(0, 0);
 }
 
 /**
@@ -201,7 +246,8 @@ function getColor(item: ImageItem) {
               <a type="button" v-show="false" class="btn btn-secondary m-1" :href="seeBig(item,index)" target="_blank">
                 查看大图
               </a>
-              <button type="button" v-show="true" class="btn btn-secondary m-1" @click="downloadUrl(item.src,item.name)">
+              <button type="button" v-show="true" class="btn btn-secondary m-1"
+                      @click="downloadUrl(item)">
                 下载大图
               </button>
             </div>
@@ -222,7 +268,7 @@ function getColor(item: ImageItem) {
           <input class="page-link" type="number" style="width: 100px" v-model="inputJumpPage"/>
         </li>
         <li class="page-item">
-          <button class="page-link" @click="readPage(inputJumpPage)">跳转</button>
+          <button class="page-link" @click="jumpPage(inputJumpPage)">跳转</button>
         </li>
         <li class="page-item">
           <button class="page-link" @click="readPage(currentPage+1)">下一页</button>

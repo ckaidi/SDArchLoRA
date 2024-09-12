@@ -67,6 +67,7 @@ func main() {
 	fileServer := http.FileServer(http.FS(subFS))
 	http.Handle("/", fileServer)
 	http.HandleFunc("/archdaily", pkg.Cors(pkg.GetArchdailyImagesRoute))
+	http.HandleFunc("/archdaily/projects", pkg.Cors(pkg.GetArchdailyProjectsRoute))
 	http.HandleFunc("/img2base64", pkg.Cors(pkg.Img2Base64))
 	http.HandleFunc("/traindata", pkg.Cors(pkg.TrainData))
 	http.HandleFunc("/download", pkg.Cors(pkg.Download))
