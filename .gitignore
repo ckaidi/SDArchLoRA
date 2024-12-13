@@ -401,3 +401,5 @@ FodyWeavers.xsd
 SpiderGo
 /SpiderGo
 /SDArchLoRA.exe
+.DS_Store
+*/.DS_Store
